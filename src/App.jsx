@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -80,7 +80,6 @@ import EventAdminChecklist from './pages/admin/event/Checklist'
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
         <Routes>
 
           {/* ── Public routes ── */}
@@ -188,7 +187,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
 
         </Routes>
-      </BrowserRouter>
     </AuthProvider>
   )
 }
