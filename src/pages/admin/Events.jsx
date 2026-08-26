@@ -3,6 +3,128 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
+const EMPTY_FORM = {
+  name: '', description: '', location: '', event_location: '',
+  event_time: '', category: '', start_date: '', end_date: '',
+  is_away_conference: false, is_recurring: false, recurrence_rule: '',
+  recurrence_end_date: '', hotel_info: '', schedule_url: '',
+}
+
+const STATUS_COLORS = {
+  draft: 'bg-gray-100 text-gray-600',
+  active: 'bg-blue-100 text-blue-700',
+  live: 'bg-green-100 text-green-700',
+  closed: 'bg-red-100 text-red-700',
+  archived: 'bg-gray-100 text-gray-400',
+}
+
+function EventForm({ form, onChange, onSubmit, submitting, submitLabel }) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+          <input type="text" name="name" required value={form.name} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <input type="text" name="location" value={form.location} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea name="description" value={form.description} onChange={onChange} rows={3}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none" />
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <input type="date" name="start_date" value={form.start_date} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <input type="date" name="end_date" value={form.end_date} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+          <input type="time" name="event_time" value={form.event_time} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <select name="category" value={form.category} onChange={onChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
+            <option value="">None</option>
+            <option value="gbm">GBM</option>
+            <option value="training">Training</option>
+            <option value="committee">Committee</option>
+            <option value="social">Social</option>
+            <option value="conference">Conference</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Specific Location</label>
+          <input type="text" name="event_location" value={form.event_location} onChange={onChange}
+            placeholder="Room, building, etc."
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+        </div>
+      </div>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" name="is_recurring" checked={form.is_recurring} onChange={onChange} className="accent-[#1e3a6e]" />
+        <span className="text-sm text-gray-600">Recurring event</span>
+      </label>
+      {form.is_recurring && (
+        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Recurrence</label>
+            <select name="recurrence_rule" value={form.recurrence_rule} onChange={onChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
+              <option value="">Select...</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Repeat Until</label>
+            <input type="date" name="recurrence_end_date" value={form.recurrence_end_date} onChange={onChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+          </div>
+        </div>
+      )}
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" name="is_away_conference" checked={form.is_away_conference} onChange={onChange} className="accent-[#1e3a6e]" />
+        <span className="text-sm text-gray-600">This is an away conference</span>
+      </label>
+      {form.is_away_conference && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Info</label>
+            <input type="text" name="hotel_info" value={form.hotel_info} onChange={onChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Schedule URL</label>
+            <input type="url" name="schedule_url" value={form.schedule_url} onChange={onChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+          </div>
+        </div>
+      )}
+      <button type="submit" disabled={submitting}
+        className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
+        {submitting ? 'Saving...' : submitLabel}
+      </button>
+    </form>
+  )
+}
+
 export default function AdminEvents() {
   const { profile } = useAuth()
   const [events, setEvents] = useState([])
@@ -11,12 +133,7 @@ export default function AdminEvents() {
   const [selected, setSelected] = useState(null)
   const [editing, setEditing] = useState(false)
   const [interestedUsers, setInterestedUsers] = useState([])
-  const [form, setForm] = useState({
-    name: '', description: '', location: '', event_location: '',
-    event_time: '', category: '', start_date: '', end_date: '',
-    is_away_conference: false, is_recurring: false, recurrence_rule: '',
-    recurrence_end_date: '', hotel_info: '', schedule_url: '',
-  })
+  const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => { fetchEvents() }, [])
@@ -57,12 +174,7 @@ export default function AdminEvents() {
     })
     if (!error) {
       setShowForm(false)
-      setForm({
-        name: '', description: '', location: '', event_location: '',
-        event_time: '', category: '', start_date: '', end_date: '',
-        is_away_conference: false, is_recurring: false, recurrence_rule: '',
-        recurrence_end_date: '', hotel_info: '', schedule_url: '',
-      })
+      setForm(EMPTY_FORM)
       fetchEvents()
     }
     setSubmitting(false)
@@ -74,8 +186,8 @@ export default function AdminEvents() {
     const { error } = await supabase.from('events').update(form).eq('id', selected.id)
     if (!error) {
       setEditing(false)
+      setSelected(null)
       fetchEvents()
-      setSelected(prev => ({ ...prev, ...form }))
     }
     setSubmitting(false)
   }
@@ -108,7 +220,7 @@ export default function AdminEvents() {
   }
 
   async function cancelEvent(id) {
-    if (!confirm('Cancel this event? It will be hidden from the public calendar.')) return
+    if (!confirm('Cancel this event?')) return
     await supabase.from('events').update({ is_cancelled: true, status: 'closed' }).eq('id', id)
     fetchEvents()
   }
@@ -126,119 +238,6 @@ export default function AdminEvents() {
     fetchInterestedUsers(selected.id)
   }
 
-  const STATUS_COLORS = {
-    draft: 'bg-gray-100 text-gray-600',
-    active: 'bg-blue-100 text-blue-700',
-    live: 'bg-green-100 text-green-700',
-    closed: 'bg-red-100 text-red-700',
-    archived: 'bg-gray-100 text-gray-400',
-  }
-
-  const FormFields = ({ onSubmit, submitLabel }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
-          <input type="text" name="name" required value={form.name} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-          <input type="text" name="location" value={form.location} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-        <textarea name="description" value={form.description} onChange={handleChange} rows={3}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none" />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-          <input type="date" name="start_date" value={form.start_date} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-          <input type="date" name="end_date" value={form.end_date} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-          <input type="time" name="event_time" value={form.event_time} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-          <select name="category" value={form.category} onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
-            <option value="">None</option>
-            <option value="gbm">GBM</option>
-            <option value="training">Training</option>
-            <option value="committee">Committee</option>
-            <option value="social">Social</option>
-            <option value="conference">Conference</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Specific Location</label>
-          <input type="text" name="event_location" value={form.event_location} onChange={handleChange}
-            placeholder="Room, building, etc."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-        </div>
-      </div>
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" name="is_recurring" checked={form.is_recurring} onChange={handleChange} className="accent-[#1e3a6e]" />
-        <span className="text-sm text-gray-600">Recurring event</span>
-      </label>
-      {form.is_recurring && (
-        <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Recurrence</label>
-            <select name="recurrence_rule" value={form.recurrence_rule} onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
-              <option value="">Select...</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Every 2 weeks</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Repeat Until</label>
-            <input type="date" name="recurrence_end_date" value={form.recurrence_end_date} onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-          </div>
-        </div>
-      )}
-      <label className="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" name="is_away_conference" checked={form.is_away_conference} onChange={handleChange} className="accent-[#1e3a6e]" />
-        <span className="text-sm text-gray-600">This is an away conference</span>
-      </label>
-      {form.is_away_conference && (
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Info</label>
-            <input type="text" name="hotel_info" value={form.hotel_info} onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Schedule URL</label>
-            <input type="url" name="schedule_url" value={form.schedule_url} onChange={handleChange}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-          </div>
-        </div>
-      )}
-      <button type="submit" disabled={submitting}
-        className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
-        {submitting ? 'Saving...' : submitLabel}
-      </button>
-    </form>
-  )
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -246,7 +245,7 @@ export default function AdminEvents() {
           <h1 className="font-serif text-2xl font-bold text-gray-900">Events</h1>
           <p className="text-sm text-gray-500 mt-1">Create and manage events and conferences.</p>
         </div>
-        <button onClick={() => { setShowForm(true); setEditing(false); setSelected(null) }}
+        <button onClick={() => { setShowForm(true); setEditing(false); setSelected(null); setForm(EMPTY_FORM) }}
           className="bg-[#1e3a6e] text-white font-semibold text-sm px-4 py-2 rounded hover:bg-[#2d538f] transition-colors">
           + New Event
         </button>
@@ -259,7 +258,7 @@ export default function AdminEvents() {
             <h2 className="font-semibold text-gray-900">New Event</h2>
             <button onClick={() => setShowForm(false)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
           </div>
-          <FormFields onSubmit={handleSubmit} submitLabel="Create Event" />
+          <EventForm form={form} onChange={handleChange} onSubmit={handleSubmit} submitting={submitting} submitLabel="Create Event" />
         </div>
       )}
 
@@ -272,9 +271,8 @@ export default function AdminEvents() {
               <button onClick={() => setEditing(false)} className="text-gray-400 hover:text-gray-600 text-lg">&#x2715;</button>
             </div>
             <div className="p-6">
-              <FormFields onSubmit={handleUpdate} submitLabel="Save Changes" />
+              <EventForm form={form} onChange={handleChange} onSubmit={handleUpdate} submitting={submitting} submitLabel="Save Changes" />
 
-              {/* Interested users */}
               {interestedUsers.length > 0 && (
                 <div className="mt-8">
                   <h3 className="font-semibold text-gray-900 mb-4">Interest Signups</h3>
@@ -290,10 +288,8 @@ export default function AdminEvents() {
                         {item.approved ? (
                           <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Approved</span>
                         ) : (
-                          <button
-                            onClick={() => approveInterest(item.id)}
-                            className="text-xs bg-[#1e3a6e] text-white font-semibold px-3 py-1.5 rounded hover:bg-[#2d538f] transition-colors"
-                          >
+                          <button onClick={() => approveInterest(item.id)}
+                            className="text-xs bg-[#1e3a6e] text-white font-semibold px-3 py-1.5 rounded hover:bg-[#2d538f] transition-colors">
                             Approve
                           </button>
                         )}
@@ -331,18 +327,10 @@ export default function AdminEvents() {
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_COLORS[event.status]}`}>
                     {event.status}
                   </span>
-                  {event.is_cancelled && (
-                    <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">Cancelled</span>
-                  )}
-                  {event.is_recurring && (
-                    <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Recurring</span>
-                  )}
-                  {event.is_away_conference && (
-                    <span className="text-xs font-bold text-[#b8963e] bg-[#fdf6e3] px-2 py-0.5 rounded-full">Away</span>
-                  )}
-                  {event.category && (
-                    <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full capitalize">{event.category}</span>
-                  )}
+                  {event.is_cancelled && <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">Cancelled</span>}
+                  {event.is_recurring && <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Recurring</span>}
+                  {event.is_away_conference && <span className="text-xs font-bold text-[#b8963e] bg-[#fdf6e3] px-2 py-0.5 rounded-full">Away</span>}
+                  {event.category && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full capitalize">{event.category}</span>}
                 </div>
                 {event.location && <p className="text-xs text-gray-500">{event.location}</p>}
                 {event.start_date && (
@@ -357,42 +345,28 @@ export default function AdminEvents() {
                 {event.is_recurring && event.recurrence_rule && (
                   <p className="text-xs text-purple-500 mt-0.5 capitalize">Repeats {event.recurrence_rule}</p>
                 )}
-                {event.committees?.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-1">{event.committees.length} committee{event.committees.length !== 1 ? 's' : ''}</p>
-                )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                <select
-                  value={event.status}
-                  onChange={e => updateStatus(event.id, e.target.value)}
-                  className="text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-[#1e3a6e] bg-white"
-                >
+                <select value={event.status} onChange={e => updateStatus(event.id, e.target.value)}
+                  className="text-xs border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:border-[#1e3a6e] bg-white">
                   {['draft', 'active', 'live', 'closed', 'archived'].map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
-                <button
-                  onClick={() => openEdit(event)}
-                  className="text-xs bg-[#1e3a6e] text-white font-semibold px-3 py-1.5 rounded hover:bg-[#2d538f] transition-colors"
-                >
+                <button onClick={() => openEdit(event)}
+                  className="text-xs bg-[#1e3a6e] text-white font-semibold px-3 py-1.5 rounded hover:bg-[#2d538f] transition-colors">
                   Edit
                 </button>
-                <Link
-                  to={`/admin/event/${event.id}`}
-                  className="text-xs border border-gray-200 text-gray-600 font-semibold px-3 py-1.5 rounded hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors"
-                >
+                <Link to={`/admin/event/${event.id}`}
+                  className="text-xs border border-gray-200 text-gray-600 font-semibold px-3 py-1.5 rounded hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
                   Manage
                 </Link>
-                <button
-                  onClick={() => cancelEvent(event.id)}
-                  className="text-xs text-yellow-600 border border-yellow-200 px-3 py-1.5 rounded hover:bg-yellow-50 transition-colors"
-                >
+                <button onClick={() => cancelEvent(event.id)}
+                  className="text-xs text-yellow-600 border border-yellow-200 px-3 py-1.5 rounded hover:bg-yellow-50 transition-colors">
                   Cancel
                 </button>
-                <button
-                  onClick={() => deleteEvent(event.id)}
-                  className="text-xs text-red-500 border border-red-200 px-3 py-1.5 rounded hover:bg-red-50 transition-colors"
-                >
+                <button onClick={() => deleteEvent(event.id)}
+                  className="text-xs text-red-500 border border-red-200 px-3 py-1.5 rounded hover:bg-red-50 transition-colors">
                   Delete
                 </button>
               </div>
