@@ -11,6 +11,7 @@ const NAV = [
   { label: 'Attendees', to: 'attendees' },
   { label: 'Schedule', to: 'schedule' },
   { label: 'Files', to: 'files' },
+  { label: 'Delegates', to: 'delegates' },
 ]
 
 export default function EventAdminLayout() {
