@@ -1,7 +1,7 @@
 const { createClient } = require('@supabase/supabase-js')
 
 const supabase = createClient(
-  'https://vtwogeznktkaqqvndduh.supabase.co',
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
@@ -14,14 +14,28 @@ exports.handler = async (event) => {
       .select('*, user_roles(*, roles(*))')
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    console.log('Data count:', data?.length)
+    console.log('Error:', error)
+
+    if (error) {
+      return { 
+        statusCode: 500, 
+        body: JSON.stringify({ error: error.message, details: error.details }),
+        headers: { 'Content-Type': 'application/json' }
+      }
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify(data ?? []),
       headers: { 'Content-Type': 'application/json' }
     }
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) }
+    console.error('Caught error:', err)
+    return { 
+      statusCode: 500, 
+      body: JSON.stringify({ error: err.message }),
+      headers: { 'Content-Type': 'application/json' }
+    }
   }
 }
