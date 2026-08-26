@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { ProtectedRoute } from './components/ProtectedRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 import PublicLayout from './layouts/PublicLayout'
 
 // Auth pages
