@@ -54,7 +54,7 @@ export default function PortalEvents() {
       .from('user_event_roles')
       .select('*, event_roles(event_id)')
       .eq('user_id', profile.id)
-    setSignedUp(data?.map(d => d.event_roles?.event_id) ?? [])
+    setSignedUp(data?.map(d => d.event_roles?.event_id).filter(Boolean) ?? [])
   }
 
   async function handleSignUp(eventRoleId, eventId) {
@@ -164,20 +164,30 @@ export default function PortalEvents() {
                     </div>
                   )}
 
-                  {!event._isOccurrence && event.event_roles?.length > 0 && (
-                    signed ? (
-                      <span className="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1.5 rounded-lg inline-block">
-                        &#10003; Interest Registered
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleSignUp(event.event_roles[0].id, event.id)}
-                        className="text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-1.5 rounded-lg hover:bg-[#2d538f] transition-colors"
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {!event._isOccurrence && event.event_roles?.length > 0 && (
+                      signed ? (
+                        <span className="text-xs font-semibold text-green-600 bg-green-50 px-3 py-1.5 rounded-lg inline-block">
+                          &#10003; Interest Registered
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleSignUp(event.event_roles[0].id, event.id)}
+                          className="text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-1.5 rounded-lg hover:bg-[#2d538f] transition-colors"
+                        >
+                          Express Interest
+                        </button>
+                      )
+                    )}
+                    {isStaffOrAbove && !event._isOccurrence && (
+                      <Link
+                        to={`/admin/event/${event.id}`}
+                        className="text-xs font-semibold border border-[#1e3a6e] text-[#1e3a6e] px-4 py-1.5 rounded-lg hover:bg-[#e8eef7] transition-colors"
                       >
-                        Express Interest
-                      </button>
-                    )
-                  )}
+                        Manage Event
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             )
