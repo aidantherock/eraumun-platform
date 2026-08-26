@@ -277,7 +277,7 @@ export default function MemberProfile() {
                       )}
                     </div>
                     
-                      href={`/.netlify/functions/generate-certificate?userId=${memberId}&eventId=${item.event_roles.event_id}`}
+                      <a href={`/.netlify/functions/generate-certificate?userId=${memberId}&eventId=${item.event_roles.event_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-[#1e3a6e] font-semibold border border-[#1e3a6e] px-3 py-1.5 rounded hover:bg-[#e8eef7] transition-colors flex-shrink-0"
