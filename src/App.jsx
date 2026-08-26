@@ -19,6 +19,7 @@ import News from './pages/public/News'
 import Contact from './pages/public/Contact'
 import ErnieCrisis from './pages/public/ErnieCrisis'
 import NotFound from './pages/public/NotFound'
+import InviteAccept from './pages/public/InviteAccept'
 
 // Legal pages
 import Privacy from './pages/public/Privacy'
@@ -84,6 +85,7 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/invite/:token" element={<InviteAccept />} />
         </Route>
 
         {/* ── Portal routes ── */}
