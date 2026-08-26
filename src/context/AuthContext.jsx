@@ -62,15 +62,19 @@ export function AuthProvider({ children }) {
   const isPending = profile?.status === 'pending'
 
   async function signUp(email, password, firstName, lastName) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { first_name: firstName, last_name: lastName }
-      }
-    })
-    return { data, error }
-  }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+      emailRedirectTo: 'https://eraumun.com/portal',
+    }
+  })
+  return { data, error }
+    }
 
   async function signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 
 export default function Register() {
   const { signUp } = useAuth()
@@ -52,7 +53,8 @@ export default function Register() {
     }
 
     setLoading(true)
-    const { error } = await signUp(
+
+    const { data, error } = await signUp(
       form.email,
       form.password,
       form.firstName,
@@ -65,14 +67,22 @@ export default function Register() {
       return
     }
 
+    // Update school in profile
+    if (data?.user) {
+      await supabase
+        .from('profiles')
+        .update({ school: form.school })
+        .eq('id', data.user.id)
+    }
+
     navigate('/pending')
+    setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <img src="/logo-horizontal.jpg" alt="ERAU-MUN" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
@@ -81,7 +91,6 @@ export default function Register() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -90,141 +99,67 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  required
-                  value={form.firstName}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                <input type="text" name="firstName" required value={form.firstName} onChange={handleChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  required
-                  value={form.lastName}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                <input type="text" name="lastName" required value={form.lastName} onChange={handleChange}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors" />
               </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
-              </label>
-              <input
-                type="email"
-                name="email"
-                required
-                value={form.email}
-                onChange={handleChange}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+              <input type="email" name="email" required value={form.email} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                placeholder="you@example.com"
-              />
+                placeholder="you@example.com" />
             </div>
 
-            {/* School */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                School / Institution
-              </label>
-              <input
-                type="text"
-                name="school"
-                required
-                value={form.school}
-                onChange={handleChange}
+              <label className="block text-sm font-medium text-gray-700 mb-1">School / Institution</label>
+              <input type="text" name="school" required value={form.school} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                placeholder="Embry-Riddle Aeronautical University"
-              />
+                placeholder="Embry-Riddle Aeronautical University" />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                required
-                value={form.password}
-                onChange={handleChange}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input type="password" name="password" required value={form.password} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                placeholder="Min. 8 characters, 1 number, 1 special character"
-              />
+                placeholder="Min. 8 characters, 1 number, 1 special character" />
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                required
-                value={form.confirmPassword}
-                onChange={handleChange}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm password</label>
+              <input type="password" name="confirmPassword" required value={form.confirmPassword} onChange={handleChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-900 transition-colors"
-                placeholder="••••••••"
-              />
+                placeholder="••••••••" />
             </div>
 
-            {/* Checkboxes */}
             <div className="space-y-3 pt-1">
               <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="ageConfirmed"
-                  checked={form.ageConfirmed}
-                  onChange={handleChange}
-                  className="mt-0.5 accent-blue-900"
-                />
-                <span className="text-sm text-gray-600">
-                  I confirm that I am 13 years of age or older.
-                </span>
+                <input type="checkbox" name="ageConfirmed" checked={form.ageConfirmed} onChange={handleChange}
+                  className="mt-0.5 accent-blue-900" />
+                <span className="text-sm text-gray-600">I confirm that I am 13 years of age or older.</span>
               </label>
-
               <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="tosAccepted"
-                  checked={form.tosAccepted}
-                  onChange={handleChange}
-                  className="mt-0.5 accent-blue-900"
-                />
+                <input type="checkbox" name="tosAccepted" checked={form.tosAccepted} onChange={handleChange}
+                  className="mt-0.5 accent-blue-900" />
                 <span className="text-sm text-gray-600">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-blue-900 font-medium hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-blue-900 font-medium hover:underline">
-                    Privacy Policy
-                  </Link>.
+                  <Link to="/terms" className="text-blue-900 font-medium hover:underline">Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link to="/privacy" className="text-blue-900 font-medium hover:underline">Privacy Policy</Link>.
                 </span>
               </label>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-900 text-white font-semibold text-sm py-2.5 rounded hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-            >
+            <button type="submit" disabled={loading}
+              className="w-full bg-blue-900 text-white font-semibold text-sm py-2.5 rounded hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2">
               {loading ? 'Creating account...' : 'Create account'}
             </button>
           </form>
@@ -232,17 +167,14 @@ export default function Register() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-900 font-medium hover:underline">
-            Sign in
-          </Link>
+          <Link to="/login" className="text-blue-900 font-medium hover:underline">Sign in</Link>
         </p>
 
         <p className="text-center mt-4">
           <Link to="/" className="text-sm text-gray-400 hover:text-gray-600">
-            ← Back to eraumun.com
+            Back to eraumun.com
           </Link>
         </p>
-
       </div>
     </div>
   )
