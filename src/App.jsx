@@ -1,14 +1,13 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
-import PublicLayout from './layouts/PublicLayout'
 
-// Auth pages
-import Login from './pages/public/Login'
-import Register from './pages/public/Register'
-import ResetPassword from './pages/public/ResetPassword'
-import UpdatePassword from './pages/public/UpdatePassword'
-import Pending from './pages/public/Pending'
+// Layouts
+import PublicLayout from './layouts/PublicLayout'
+import PortalLayout from './layouts/PortalLayout'
+import AdminLayout from './layouts/AdminLayout'
+import EventAdminLayout from './layouts/EventAdminLayout'
+import CommitteeLayout from './layouts/CommitteeLayout'
 
 // Public pages
 import Home from './pages/public/Home'
@@ -18,18 +17,18 @@ import Support from './pages/public/Support'
 import News from './pages/public/News'
 import Contact from './pages/public/Contact'
 import ErnieCrisis from './pages/public/ErnieCrisis'
-import NotFound from './pages/public/NotFound'
-import InviteAccept from './pages/public/InviteAccept'
-import NewsPost from './pages/public/NewsPost'
-import Gallery from './pages/public/Gallery'
-
-// Legal pages
 import Privacy from './pages/public/Privacy'
 import Terms from './pages/public/Terms'
 import Cookies from './pages/public/Cookies'
+import NotFound from './pages/public/NotFound'
+import Gallery from './pages/public/Gallery'
+import NewsPost from './pages/public/NewsPost'
+import Login from './pages/public/Login'
+import Register from './pages/public/Register'
+import Pending from './pages/public/Pending'
+import InviteAccept from './pages/public/InviteAccept'
 
 // Portal pages
-import PortalLayout from './layouts/PortalLayout'
 import PortalHome from './pages/portal/Home'
 import PortalEvents from './pages/portal/Events'
 import PortalContact from './pages/portal/Contact'
@@ -40,8 +39,20 @@ import MemberProfile from './pages/portal/MemberProfile'
 import StaffControlRoom from './pages/portal/StaffControlRoom'
 import EventChecklist from './pages/portal/EventChecklist'
 
+// Committee workspace
+import CommitteeHome from './pages/portal/committee/Home'
+import CommitteeSubmissions from './pages/portal/committee/Submissions'
+import CommitteeVoting from './pages/portal/committee/Voting'
+import CommitteeMessages from './pages/portal/committee/Messages'
+import CommitteeResolutions from './pages/portal/committee/Resolutions'
+import CommitteeFloor from './pages/portal/committee/Floor'
+import CommitteeCrisis from './pages/portal/committee/Crisis'
+import CrisisNotes from './pages/portal/committee/CrisisNotes'
+import CommitteeAwards from './pages/portal/committee/Awards'
+import CommitteeResources from './pages/portal/committee/Resources'
+import ConferenceMode from './pages/portal/committee/ConferenceMode'
+
 // Admin pages
-import AdminLayout from './layouts/AdminLayout'
 import AdminHome from './pages/admin/Home'
 import AdminUsers from './pages/admin/Users'
 import AdminAnnouncements from './pages/admin/Announcements'
@@ -54,7 +65,6 @@ import AdminAwards from './pages/admin/Awards'
 import AdminGallery from './pages/admin/Gallery'
 
 // Event Admin pages
-import EventAdminLayout from './layouts/EventAdminLayout'
 import EventAdminHome from './pages/admin/event/Home'
 import EventAdminCommittees from './pages/admin/event/Committees'
 import EventAdminRoles from './pages/admin/event/Roles'
@@ -67,127 +77,118 @@ import EventAdminExport from './pages/admin/event/Export'
 import EventAdminAwards from './pages/admin/event/Awards'
 import EventAdminChecklist from './pages/admin/event/Checklist'
 
-// Committee pages
-import CommitteeLayout from './layouts/CommitteeLayout'
-import CommitteeHome from './pages/portal/committee/Home'
-import CommitteeSubmissions from './pages/portal/committee/Submissions'
-import CommitteeVoting from './pages/portal/committee/Voting'
-import CommitteeMessages from './pages/portal/committee/Messages'
-import CommitteeResolutions from './pages/portal/committee/Resolutions'
-import CommitteeFloor from './pages/portal/committee/Floor'
-import CommitteeCrisis from './pages/portal/committee/Crisis'
-import ConferenceMode from './pages/portal/committee/ConferenceMode'
-import CrisisNotes from './pages/portal/committee/CrisisNotes'
-import CommitteeResources from './pages/portal/committee/Resources'
-import CommitteeAwards from './pages/portal/committee/Awards'
-
-
-function App() {
+export default function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <BrowserRouter>
+        <Routes>
 
-        {/* ── Auth routes (no layout) ── */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/update-password" element={<UpdatePassword />} />
-        <Route path="/pending" element={<Pending />} />
+          {/* ── Public routes ── */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/conferences" element={<Conferences />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/news" element={<News />} />
+            <Route path="/news/:slug" element={<NewsPost />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/ernie-crisis" element={<ErnieCrisis />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
+            <Route path="/gallery" element={<Gallery />} />
+          </Route>
 
-        {/* ── Public site routes ── */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/conferences" element={<Conferences />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/ernie-crisis" element={<ErnieCrisis />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="*" element={<NotFound />} />
+          {/* ── Auth routes ── */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/pending" element={<Pending />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
-          <Route path="/news/:slug" element={<NewsPost />} />
-          <Route path="/gallery" element={<Gallery />} />
-        </Route>
 
-        {/* ── Portal routes ── */}
-        <Route path="/portal" element={
-          <ProtectedRoute>
-            <PortalLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<PortalHome />} />
-          <Route path="events" element={<PortalEvents />} />
-          <Route path="contact" element={<PortalContact />} />
-          <Route path="profile" element={<PortalProfile />} />
-          <Route path="events/:eventId" element={<EventDetail />} />
-          <Route path="directory" element={<Directory />} />
-          <Route path="directory/:memberId" element={<MemberProfile />} />
-          <Route path="control-room/:eventId" element={<StaffControlRoom />} />
-          <Route path="checklist" element={<EventAdminChecklist />} />
-        </Route>
+          {/* ── Portal routes ── */}
+          <Route path="/portal" element={
+            <ProtectedRoute>
+              <PortalLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<PortalHome />} />
+            <Route path="events" element={<PortalEvents />} />
+            <Route path="events/:eventId" element={<EventDetail />} />
+            <Route path="events/:eventId/checklist" element={<EventChecklist />} />
+            <Route path="contact" element={<PortalContact />} />
+            <Route path="profile" element={<PortalProfile />} />
+            <Route path="directory" element={<Directory />} />
+            <Route path="directory/:memberId" element={<MemberProfile />} />
+            <Route path="control-room/:eventId" element={<StaffControlRoom />} />
+          </Route>
 
-        {/* ── Committee workspace routes ── */}
-        <Route path="/portal/committee/:committeeId" element={
-          <ProtectedRoute>
-            <CommitteeLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<CommitteeHome />} />
-          <Route path="submissions" element={<CommitteeSubmissions />} />
-          <Route path="voting" element={<CommitteeVoting />} />
-          <Route path="messages" element={<CommitteeMessages />} />
-          <Route path="resolutions" element={<CommitteeResolutions />} />
-          <Route path="floor" element={<CommitteeFloor />} />
-          <Route path="crisis" element={<CommitteeCrisis />} />
-          <Route path="committee/:committeeId/conference" element={<ConferenceMode />} />
-          <Route path="notes" element={<CrisisNotes />} />
-          <Route path="awards" element={<CommitteeAwards />} />
-        </Route>
+          {/* ── Conference mode (standalone, no portal layout) ── */}
+          <Route path="/portal/committee/:committeeId/conference" element={
+            <ProtectedRoute>
+              <ConferenceMode />
+            </ProtectedRoute>
+          } />
 
-        {/* ── Global Admin routes ── */}
-        <Route path="/admin" element={
-          <ProtectedRoute requireLevel={80}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<AdminHome />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="announcements" element={<AdminAnnouncements />} />
-          <Route path="sponsors" element={<AdminSponsors />} />
-          <Route path="forms" element={<AdminForms />} />
-          <Route path="events" element={<AdminEvents />} />
-          <Route path="emails" element={<AdminEmails />} />
-          <Route path="news" element={<AdminNews />} />
-          <Route path="awards" element={<AdminAwards />} />
-          <Route path="gallery" element={<AdminGallery />} />
-        </Route>
+          {/* ── Committee workspace routes ── */}
+          <Route path="/portal/committee/:committeeId" element={
+            <ProtectedRoute>
+              <CommitteeLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<CommitteeHome />} />
+            <Route path="submissions" element={<CommitteeSubmissions />} />
+            <Route path="voting" element={<CommitteeVoting />} />
+            <Route path="messages" element={<CommitteeMessages />} />
+            <Route path="resolutions" element={<CommitteeResolutions />} />
+            <Route path="floor" element={<CommitteeFloor />} />
+            <Route path="crisis" element={<CommitteeCrisis />} />
+            <Route path="notes" element={<CrisisNotes />} />
+            <Route path="awards" element={<CommitteeAwards />} />
+            <Route path="resources" element={<CommitteeResources />} />
+          </Route>
 
-        {/* ── Event Admin routes ── */}
-        <Route path="/admin/event/:eventId" element={
-          <ProtectedRoute requireLevel={70}>
-            <EventAdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<EventAdminHome />} />
-          <Route path="committees" element={<EventAdminCommittees />} />
-          <Route path="roles" element={<EventAdminRoles />} />
-          <Route path="submissions" element={<EventAdminSubmissions />} />
-          <Route path="attendees" element={<EventAdminAttendees />} />
-          <Route path="schedule" element={<EventAdminSchedule />} />
-          <Route path="files" element={<EventAdminFiles />} />
-          <Route path="delegates" element={<EventAdminGuestDelegates />} />
-          <Route path="export" element={<EventAdminExport />} />
-          <Route path="awards" element={<EventAdminAwards />} />
-          <Route path="resources" element={<CommitteeResources />} />
-          <Route path="events/:eventId/checklist" element={<EventChecklist />} />
-        </Route>
+          {/* ── Global Admin routes ── */}
+          <Route path="/admin" element={
+            <ProtectedRoute requireLevel={80}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminHome />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="sponsors" element={<AdminSponsors />} />
+            <Route path="forms" element={<AdminForms />} />
+            <Route path="events" element={<AdminEvents />} />
+            <Route path="emails" element={<AdminEmails />} />
+            <Route path="news" element={<AdminNews />} />
+            <Route path="awards" element={<AdminAwards />} />
+            <Route path="gallery" element={<AdminGallery />} />
+          </Route>
 
-      </Routes>
+          {/* ── Event Admin routes ── */}
+          <Route path="/admin/event/:eventId" element={
+            <ProtectedRoute requireLevel={70}>
+              <EventAdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<EventAdminHome />} />
+            <Route path="committees" element={<EventAdminCommittees />} />
+            <Route path="roles" element={<EventAdminRoles />} />
+            <Route path="submissions" element={<EventAdminSubmissions />} />
+            <Route path="attendees" element={<EventAdminAttendees />} />
+            <Route path="schedule" element={<EventAdminSchedule />} />
+            <Route path="files" element={<EventAdminFiles />} />
+            <Route path="delegates" element={<EventAdminGuestDelegates />} />
+            <Route path="export" element={<EventAdminExport />} />
+            <Route path="awards" element={<EventAdminAwards />} />
+            <Route path="checklist" element={<EventAdminChecklist />} />
+          </Route>
+
+          {/* ── 404 ── */}
+          <Route path="*" element={<NotFound />} />
+
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   )
 }
-
-export default App

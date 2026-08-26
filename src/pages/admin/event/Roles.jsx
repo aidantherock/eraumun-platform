@@ -50,20 +50,32 @@ export default function EventAdminRoles() {
   }
 
   async function assignEventRole(userId) {
-    const { data: eventRole } = await supabase
-      .from('event_roles')
-      .select('id')
-      .eq('event_id', event.id)
-      .single()
+  // Get or create event role
+  let { data: eventRole } = await supabase
+    .from('event_roles')
+    .select('id')
+    .eq('event_id', event.id)
+    .single()
 
-    if (eventRole) {
-      await supabase.from('user_event_roles').insert({
-        user_id: userId,
-        event_role_id: eventRole.id,
-      })
-      fetchUsers()
-      fetchEventAttendees()
-    }
+  if (!eventRole) {
+    const { data: newRole } = await supabase
+      .from('event_roles')
+      .insert({ event_id: event.id, name: 'Attendee' })
+      .select()
+      .single()
+    eventRole = newRole
+  }
+
+  if (!eventRole) return
+
+  await supabase.from('user_event_roles').upsert({
+    user_id: userId,
+    event_role_id: eventRole.id,
+    approved: true,
+  }, { onConflict: 'user_id, event_role_id' })
+
+  fetchUsers()
+  fetchEventAttendees()
   }
 
   async function assignCommitteeRole(e) {
