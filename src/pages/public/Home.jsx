@@ -87,10 +87,10 @@ export default function Home() {
       <section className="bg-[#0f2040] px-6 py-8">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { value: '10+', label: 'Conferences Attended' },
+            { value: '5+', label: 'Conferences Attended Annually' },
             { value: '50+', label: 'Active Members' },
             { value: '5+', label: 'Years Active' },
-            { value: '1', label: 'Hosted Conference' },
+            { value: '1', label: 'Awesome ERAU MUN Team' },
           ].map(stat => (
             <div key={stat.label} className="text-center">
               <p className="font-serif text-3xl font-bold text-[#d4af62]">{stat.value}</p>
@@ -123,7 +123,7 @@ export default function Home() {
             {[
               { title: 'Conferences', desc: 'Compete at regional and national MUN conferences across the country.' },
               { title: 'Training', desc: 'Regular workshops on resolution writing, public speaking, and diplomacy.' },
-              { title: 'ErnieMUN', desc: 'ERAU\'s own hosted intercollegiate conference open to all schools.' },
+              { title: 'Ernie Crisis Simulation', desc: 'ERAU\'s first competitive Model United Nations simulation.' },
               { title: 'Community', desc: 'A tight-knit team of delegates passionate about global affairs.' },
             ].map(item => (
               <div key={item.title} className="bg-gray-50 border border-gray-100 rounded-xl p-5">

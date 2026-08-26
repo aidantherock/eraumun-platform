@@ -42,7 +42,7 @@ export default function About() {
               Through participation in Model United Nations conferences across the country, our members develop critical thinking, research, negotiation, and leadership skills that extend far beyond the classroom.
             </p>
             <p className="text-gray-500 text-sm leading-relaxed font-light">
-              Our four strategic pillars guide everything we do: outreach, revitalized events, intercollegiate competition, and the launch of ErnieMUN — ERAU's first hosted intercollegiate MUN conference.
+              Our four strategic pillars guide everything we do: outreach, revitalized events, intercollegiate competition, and the launch of the Ernie Crisis Simulation - ERAU's first competitive Model United Nations simulation.
             </p>
           </div>
           <div className="flex flex-col gap-3">
@@ -50,7 +50,7 @@ export default function About() {
               { title: 'Outreach', desc: 'Expanding our reach across campus and the broader MUN community through partnerships, social media, and campus engagement.' },
               { title: 'Revitalized Events', desc: 'Bringing fresh energy to our General Body Meetings, GA and Crisis training sessions, MUNMixers, and outreach events.' },
               { title: 'Intercollegiate Competition', desc: 'Representing ERAU at Model United Nations conferences across the country, competing against delegates from top universities.' },
-              { title: 'ErnieMUN', desc: "Launching ERAU's first hosted intercollegiate MUN conference, bringing delegates from schools across the region to Daytona Beach." },
+              { title: 'Ernie Crisis Simulation', desc: "Launching ERAU's first competitive Model United Nations simulation, bringing delegates from schools across the region to Daytona Beach." },
             ].map(pillar => (
               <div key={pillar.title} className="border-l-[3px] border-[#b8963e] pl-4 py-2 bg-gray-50 rounded-r">
                 <h4 className="font-semibold text-sm text-[#1e3a6e] mb-1">{pillar.title}</h4>
