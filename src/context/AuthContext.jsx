@@ -17,10 +17,11 @@ export function AuthProvider({ children }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null)
-        if (session?.user) fetchProfile(session.user.id)
-        else {
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        } else {
           setProfile(null)
           setUserRoles([])
           setLoading(false)
@@ -33,16 +34,19 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     try {
-      const [{ data: profileData, error: profileError }, { data: rolesData, error: rolesError }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('user_roles').select('*, roles(*)').eq('user_id', userId)
-      ])
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
 
-      console.log('Profile:', profileData, profileError)
-      console.log('Roles:', rolesData, rolesError)
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('*, roles(*)')
+        .eq('user_id', userId)
 
-      setProfile(profileData)
-      setUserRoles(rolesData?.map(ur => ur.roles) ?? [])
+      setProfile(profileData ?? null)
+      setUserRoles(rolesData?.map(ur => ur.roles).filter(Boolean) ?? [])
     } catch (error) {
       console.error('Error fetching profile:', error)
     } finally {
@@ -65,20 +69,14 @@ export function AuthProvider({ children }) {
       email,
       password,
       options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-        }
+        data: { first_name: firstName, last_name: lastName }
       }
     })
     return { data, error }
   }
 
   async function signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     return { data, error }
   }
 
@@ -94,9 +92,7 @@ export function AuthProvider({ children }) {
   }
 
   async function updatePassword(newPassword) {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword
-    })
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword })
     return { data, error }
   }
 
@@ -105,22 +101,10 @@ export function AuthProvider({ children }) {
   }
 
   const value = {
-    user,
-    profile,
-    userRoles,
-    roleLevel,
-    isEboard,
-    isStaffOrAbove,
-    isMemberOrAbove,
-    isApproved,
-    isPending,
-    loading,
-    signUp,
-    signIn,
-    signOut,
-    resetPassword,
-    updatePassword,
-    refreshProfile
+    user, profile, userRoles, roleLevel,
+    isEboard, isStaffOrAbove, isMemberOrAbove,
+    isApproved, isPending, loading,
+    signUp, signIn, signOut, resetPassword, updatePassword, refreshProfile
   }
 
   return (

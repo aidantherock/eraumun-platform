@@ -21,13 +21,15 @@ export default function AdminUsers() {
   }, [])
 
   async function fetchUsers() {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*, user_roles(*, roles(*))')
-      .order('created_at', { ascending: false })
-    setUsers(data ?? [])
-    setLoading(false)
-  }
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*, user_roles(*, roles(*))')
+    .order('created_at', { ascending: false })
+
+  console.log('Users:', data, error)
+  setUsers(data ?? [])
+  setLoading(false)
+}
 
   async function fetchRoles() {
     const { data } = await supabase.from('roles').select('*').order('level', { ascending: false })
