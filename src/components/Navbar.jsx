@@ -81,7 +81,7 @@ export default function Navbar() {
                 to="/register"
                 className="bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded hover:bg-blue-800 transition-colors"
               >
-                Join Us
+                Portal
               </Link>
             </>
           )}
