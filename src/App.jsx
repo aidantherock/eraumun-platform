@@ -20,6 +20,7 @@ import Contact from './pages/public/Contact'
 import ErnieCrisis from './pages/public/ErnieCrisis'
 import NotFound from './pages/public/NotFound'
 import InviteAccept from './pages/public/InviteAccept'
+import NewsPost from './pages/public/NewsPost'
 
 // Legal pages
 import Privacy from './pages/public/Privacy'
@@ -42,6 +43,7 @@ import AdminSponsors from './pages/admin/Sponsors'
 import AdminForms from './pages/admin/Forms'
 import AdminEvents from './pages/admin/Events'
 import AdminEmails from './pages/admin/Emails'
+import AdminNews from './pages/admin/News'
 
 // Event Admin pages
 import EventAdminLayout from './layouts/EventAdminLayout'
@@ -86,6 +88,7 @@ function App() {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={<NotFound />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
+          <Route path="/news/:slug" element={<NewsPost />} />
         </Route>
 
         {/* ── Portal routes ── */}
@@ -127,6 +130,7 @@ function App() {
           <Route path="forms" element={<AdminForms />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="emails" element={<AdminEmails />} />
+          <Route path="news" element={<AdminNews />} />
         </Route>
 
         {/* ── Event Admin routes ── */}

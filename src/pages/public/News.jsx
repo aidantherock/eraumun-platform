@@ -232,7 +232,7 @@ export default function News() {
           ) : news.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {news.map(post => (
-                <div key={post.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+  <Link key={post.id} to={`/news/${post.slug}`} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all block">
                   <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center">
                     <span className="font-serif text-3xl text-white/13 italic">MUN</span>
                   </div>

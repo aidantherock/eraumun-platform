@@ -9,6 +9,7 @@ const NAV = [
   { label: 'Forms', to: '/admin/forms' },
   { label: 'Events', to: '/admin/events' },
   { label: 'Emails', to: '/admin/emails' },
+  { label: 'News', to: '/admin/news' },
 ]
 
 export default function AdminLayout() {
