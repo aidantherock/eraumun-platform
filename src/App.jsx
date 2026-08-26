@@ -37,6 +37,7 @@ import PortalProfile from './pages/portal/Profile'
 import EventDetail from './pages/portal/EventDetail'
 import Directory from './pages/portal/Directory'
 import MemberProfile from './pages/portal/MemberProfile'
+import StaffControlRoom from './pages/portal/StaffControlRoom'
 
 // Admin pages
 import AdminLayout from './layouts/AdminLayout'
@@ -73,6 +74,8 @@ import CommitteeMessages from './pages/portal/committee/Messages'
 import CommitteeResolutions from './pages/portal/committee/Resolutions'
 import CommitteeFloor from './pages/portal/committee/Floor'
 import CommitteeCrisis from './pages/portal/committee/Crisis'
+import ConferenceMode from './pages/portal/committee/ConferenceMode'
+
 
 function App() {
   return (
@@ -117,6 +120,7 @@ function App() {
           <Route path="events/:eventId" element={<EventDetail />} />
           <Route path="directory" element={<Directory />} />
           <Route path="directory/:memberId" element={<MemberProfile />} />
+          <Route path="control-room/:eventId" element={<StaffControlRoom />} />
         </Route>
 
         {/* ── Committee workspace routes ── */}
@@ -132,6 +136,7 @@ function App() {
           <Route path="resolutions" element={<CommitteeResolutions />} />
           <Route path="floor" element={<CommitteeFloor />} />
           <Route path="crisis" element={<CommitteeCrisis />} />
+          <Route path="committee/:committeeId/conference" element={<ConferenceMode />} />
         </Route>
 
         {/* ── Global Admin routes ── */}

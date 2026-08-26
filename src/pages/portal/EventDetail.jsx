@@ -538,30 +538,36 @@ export default function EventDetail() {
         )}
 
         {/* Settings */}
-        {tab === 'Settings' && isStaffOrAbove && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="font-serif text-xl font-bold text-gray-900">Event Settings</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Manage this event from the admin panel.</p>
-            </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Event Admin Panel', to: `/admin/event/${eventId}` },
-                  { label: 'Manage Committees', to: `/admin/event/${eventId}/committees` },
-                  { label: 'Assign Roles', to: `/admin/event/${eventId}/roles` },
-                  { label: 'Manage Attendees', to: `/admin/event/${eventId}/attendees` },
-                  { label: 'View Submissions', to: `/admin/event/${eventId}/submissions` },
-                ].map(link => (
-                  <Link key={link.to} to={link.to}
-                    className="flex items-center justify-center border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-3 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+{tab === 'Settings' && isStaffOrAbove && (
+  <div className="space-y-6">
+    <div>
+      <h2 className="font-serif text-xl font-bold text-gray-900">Event Settings</h2>
+      <p className="text-sm text-gray-500 mt-0.5">Manage this event from the admin panel.</p>
+    </div>
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <div className="grid grid-cols-2 gap-4">
+        <Link
+          to={`/portal/control-room/${eventId}`}
+          className="flex items-center justify-center col-span-2 border border-[#1e3a6e] text-[#1e3a6e] font-semibold text-sm px-4 py-3 rounded-lg hover:bg-[#e8eef7] transition-colors"
+        >
+          ⚡ Staff Control Room
+        </Link>
+        {[
+          { label: 'Event Admin Panel', to: `/admin/event/${eventId}` },
+          { label: 'Manage Committees', to: `/admin/event/${eventId}/committees` },
+          { label: 'Assign Roles', to: `/admin/event/${eventId}/roles` },
+          { label: 'Manage Attendees', to: `/admin/event/${eventId}/attendees` },
+          { label: 'View Submissions', to: `/admin/event/${eventId}/submissions` },
+        ].map(link => (
+          <Link key={link.to} to={link.to}
+            className="flex items-center justify-center border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-3 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
       </div>
     </div>
