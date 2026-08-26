@@ -10,14 +10,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
       else setLoading(false)
     })
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setUser(session?.user ?? null)
@@ -37,9 +35,7 @@ export function AuthProvider({ children }) {
     try {
       const [{ data: profileData }, { data: rolesData }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
-        supabase.from('user_roles')
-          .select('*, roles(*)')
-          .eq('user_id', userId)
+        supabase.from('user_roles').select('*, roles(*)').eq('user_id', userId)
       ])
       setProfile(profileData)
       setUserRoles(rolesData?.map(ur => ur.roles) ?? [])
@@ -50,7 +46,6 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Role helpers
   const roleLevel = userRoles.length > 0
     ? Math.max(...userRoles.map(r => r.level))
     : 0
@@ -62,19 +57,18 @@ export function AuthProvider({ children }) {
   const isPending = profile?.status === 'pending'
 
   async function signUp(email, password, firstName, lastName) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        first_name: firstName,
-        last_name: lastName,
-      },
-      emailRedirectTo: 'https://eraumun.com/portal',
-    }
-  })
-  return { data, error }
-    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        }
+      }
+    })
+    return { data, error }
+  }
 
   async function signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({
