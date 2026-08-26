@@ -7,6 +7,7 @@ const NAV = [
   { label: 'Events', to: '/portal/events', icon: '📅' },
   { label: 'Contact', to: '/portal/contact', icon: '✉' },
   { label: 'Profile', to: '/portal/profile', icon: '👤' },
+  { label: 'Directory', to: '/portal/directory', icon: '👥' },
 ]
 
 export default function PortalLayout() {

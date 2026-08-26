@@ -34,6 +34,8 @@ import PortalEvents from './pages/portal/Events'
 import PortalContact from './pages/portal/Contact'
 import PortalProfile from './pages/portal/Profile'
 import EventDetail from './pages/portal/EventDetail'
+import Directory from './pages/portal/Directory'
+import MemberProfile from './pages/portal/MemberProfile'
 
 // Admin pages
 import AdminLayout from './layouts/AdminLayout'
@@ -109,6 +111,8 @@ function App() {
           <Route path="contact" element={<PortalContact />} />
           <Route path="profile" element={<PortalProfile />} />
           <Route path="events/:eventId" element={<EventDetail />} />
+          <Route path="directory" element={<Directory />} />
+          <Route path="directory/:memberId" element={<MemberProfile />} />
         </Route>
 
         {/* ── Committee workspace routes ── */}
