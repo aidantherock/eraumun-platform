@@ -21,10 +21,10 @@ export default function AdminUsers() {
   }, [])
 
   async function fetchUsers() {
-  const res = await fetch('/.netlify/functions/admin-get-users')
-  const data = await res.json()
-  setUsers(Array.isArray(data) ? data : [])
-  setLoading(false)
+    const res = await fetch('/.netlify/functions/admin-get-users')
+    const data = await res.json()
+    setUsers(Array.isArray(data) ? data : [])
+    setLoading(false)
   }
 
   async function fetchRoles() {
@@ -34,6 +34,19 @@ export default function AdminUsers() {
 
   async function approveUser(userId) {
     await supabase.from('profiles').update({ status: 'approved' }).eq('id', userId)
+
+    const user = users.find(u => u.id === userId)
+    if (user?.email) {
+      await fetch('/.netlify/functions/send-notification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'account_approved',
+          data: { email: user.email, firstName: user.first_name ?? 'there' }
+        })
+      }).catch(err => console.error('Approval email failed:', err))
+    }
+
     fetchUsers()
     if (selected?.id === userId) setSelected(prev => ({ ...prev, status: 'approved' }))
   }
@@ -53,7 +66,6 @@ export default function AdminUsers() {
 
   async function assignRole(userId, roleId) {
     await supabase.from('user_roles').insert({ user_id: userId, role_id: roleId, assigned_by: currentUser.id })
-      .select()
     fetchUsers()
   }
 
@@ -65,21 +77,37 @@ export default function AdminUsers() {
   async function handleInvite(e) {
     e.preventDefault()
     setInviting(true)
-    await supabase.from('invite_tokens').insert({
+
+    const { data: orgData } = await supabase.from('organizations').select('id').single()
+
+    const { data: invite } = await supabase.from('invite_tokens').insert({
       email: inviteEmail,
       role_id: inviteRole || null,
       invited_by: currentUser.id,
-      organization_id: currentUser.organization_id,
-    })
+      organization_id: orgData?.id,
+    }).select().single()
+
+    if (invite) {
+      await fetch('/.netlify/functions/send-notification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'account_invited',
+          data: {
+            email: inviteEmail,
+            inviterName: `${currentUser.first_name} ${currentUser.last_name}`,
+            roleName: roles.find(r => r.id === inviteRole)?.name ?? null,
+            token: invite.token,
+          }
+        })
+      }).catch(err => console.error('Invite email failed:', err))
+    }
+
     setInviteSuccess(true)
     setInviteEmail('')
     setInviteRole('')
     setTimeout(() => setInviteSuccess(false), 3000)
     setInviting(false)
-  }
-
-  async function forceLogout(userId) {
-    await supabase.auth.admin.signOut(userId)
   }
 
   const filtered = users.filter(u => {
@@ -107,7 +135,7 @@ export default function AdminUsers() {
         <h2 className="font-semibold text-gray-900 mb-4">Invite User</h2>
         {inviteSuccess && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-            Invite created successfully.
+            Invite sent successfully.
           </div>
         )}
         <form onSubmit={handleInvite} className="flex gap-3 flex-wrap">
@@ -160,11 +188,25 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Pending', value: users.filter(u => u.status === 'pending').length, urgent: true },
+          { label: 'Approved', value: users.filter(u => u.status === 'approved').length },
+          { label: 'Total', value: users.length },
+        ].map(stat => (
+          <div key={stat.label} className={`border rounded-xl px-5 py-4 shadow-sm ${stat.urgent && stat.value > 0 ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}>
+            <p className={`text-2xl font-bold font-serif ${stat.urgent && stat.value > 0 ? 'text-yellow-700' : 'text-[#1e3a6e]'}`}>{loading ? '—' : stat.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
       {/* User gallery */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {loading ? (
           [1,2,3,4,5,6].map(i => <div key={i} className="bg-gray-100 rounded-xl h-32 animate-pulse" />)
-        ) : filtered.map(user => (
+        ) : filtered.length > 0 ? filtered.map(user => (
           <button
             key={user.id}
             onClick={() => setSelected(user)}
@@ -179,11 +221,13 @@ export default function AdminUsers() {
               )}
             </div>
             <p className="text-xs font-semibold text-gray-900 truncate">{user.first_name} {user.last_name}</p>
-            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block ${STATUS_COLORS[user.status]}`}>
+            <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full mt-1 inline-block ${STATUS_COLORS[user.status] ?? 'bg-gray-100 text-gray-600'}`}>
               {user.status}
             </span>
           </button>
-        ))}
+        )) : (
+          <div className="col-span-6 text-center py-12 text-sm text-gray-400">No users found.</div>
+        )}
       </div>
 
       {/* User detail modal */}
@@ -195,6 +239,7 @@ export default function AdminUsers() {
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-lg">&#x2715;</button>
             </div>
             <div className="p-6 space-y-5">
+
               {/* Avatar & name */}
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-[#e8eef7] border-2 border-[#b8963e] flex items-center justify-center font-bold text-[#1e3a6e] overflow-hidden flex-shrink-0">
@@ -208,6 +253,9 @@ export default function AdminUsers() {
                   <p className="font-semibold text-gray-900">{selected.first_name} {selected.last_name}</p>
                   <p className="text-sm text-gray-500">{selected.email}</p>
                   <p className="text-xs text-gray-400">{selected.school}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Joined {new Date(selected.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
                 </div>
               </div>
 
@@ -221,7 +269,7 @@ export default function AdminUsers() {
                       onClick={() => s === 'approved' ? approveUser(selected.id) : suspendUser(selected.id)}
                       className={`text-xs font-semibold px-3 py-1.5 rounded-full border capitalize transition-all
                         ${selected.status === s
-                          ? STATUS_COLORS[s] + ' border-transparent'
+                          ? (STATUS_COLORS[s] ?? '') + ' border-transparent'
                           : 'border-gray-200 text-gray-500 hover:border-gray-400'}`}
                     >
                       {s}
@@ -237,12 +285,20 @@ export default function AdminUsers() {
                   {selected.user_roles?.map(ur => (
                     <div key={ur.id} className="flex items-center gap-1 bg-[#e8eef7] text-[#1e3a6e] text-xs font-semibold px-2.5 py-1 rounded-full">
                       {ur.roles?.name}
-                      <button onClick={() => removeRole(selected.id, ur.role_id)} className="text-[#1e3a6e]/50 hover:text-red-500 ml-1">&#x2715;</button>
+                      <button
+                        onClick={() => removeRole(selected.id, ur.role_id)}
+                        className="text-[#1e3a6e]/50 hover:text-red-500 ml-1"
+                      >
+                        &#x2715;
+                      </button>
                     </div>
                   ))}
+                  {(!selected.user_roles || selected.user_roles.length === 0) && (
+                    <p className="text-xs text-gray-400">No roles assigned.</p>
+                  )}
                 </div>
                 <select
-                  onChange={e => { if (e.target.value) assignRole(selected.id, e.target.value); e.target.value = '' }}
+                  onChange={e => { if (e.target.value) { assignRole(selected.id, e.target.value); e.target.value = '' } }}
                   className="text-xs border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:border-[#1e3a6e] bg-white"
                   defaultValue=""
                 >
