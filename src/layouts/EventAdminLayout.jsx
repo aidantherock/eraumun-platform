@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Committees', to: 'committees' },
   { label: 'Roles', to: 'roles' },
   { label: 'Submissions', to: 'submissions' },
+  { label: 'Attendees', to: 'attendees' },
 ]
 
 export default function EventAdminLayout() {

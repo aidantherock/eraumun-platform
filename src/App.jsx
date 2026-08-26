@@ -48,6 +48,7 @@ import EventAdminHome from './pages/admin/event/Home'
 import EventAdminCommittees from './pages/admin/event/Committees'
 import EventAdminRoles from './pages/admin/event/Roles'
 import EventAdminSubmissions from './pages/admin/event/Submissions'
+import EventAdminAttendees from './pages/admin/event/Attendees'
 
 // Committee pages
 import CommitteeLayout from './layouts/CommitteeLayout'
@@ -136,6 +137,7 @@ function App() {
           <Route path="committees" element={<EventAdminCommittees />} />
           <Route path="roles" element={<EventAdminRoles />} />
           <Route path="submissions" element={<EventAdminSubmissions />} />
+          <Route path="attendees" element={<EventAdminAttendees />} />
         </Route>
 
       </Routes>
