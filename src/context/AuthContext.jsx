@@ -33,10 +33,14 @@ export function AuthProvider({ children }) {
 
   async function fetchProfile(userId) {
     try {
-      const [{ data: profileData }, { data: rolesData }] = await Promise.all([
+      const [{ data: profileData, error: profileError }, { data: rolesData, error: rolesError }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('user_roles').select('*, roles(*)').eq('user_id', userId)
       ])
+
+      console.log('Profile:', profileData, profileError)
+      console.log('Roles:', rolesData, rolesError)
+
       setProfile(profileData)
       setUserRoles(rolesData?.map(ur => ur.roles) ?? [])
     } catch (error) {
