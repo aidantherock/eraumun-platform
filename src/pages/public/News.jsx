@@ -1,30 +1,13 @@
 ﻿import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 
-// ── Calendar helpers ──────────────────────────────────────────
-const MEETING_START = new Date('2026-08-25')
-const HOLIDAYS = ['2026-11-26', '2026-11-27', '2026-12-24', '2026-12-25']
-
-function getEventType(date) {
-  const day = date.getDay()
-  const dateStr = date.toISOString().split('T')[0]
-  if (HOLIDAYS.includes(dateStr)) return null
-  if (day !== 2 && day !== 5) return null
-
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000
-  const weeksSinceStart = Math.floor((date - MEETING_START) / msPerWeek)
-
-  if (day === 2) {
-    const cycle = weeksSinceStart % 4
-    if (cycle === 0) return { label: 'GBM', type: 'gbm', time: '6:00 PM' }
-    if (cycle === 1) return { label: 'GA Training', type: 'training', time: '6:00 PM' }
-    if (cycle === 2) return { label: 'Crisis Training', type: 'training', time: '6:00 PM' }
-    if (cycle === 3) return { label: 'Outreach Event', type: 'social', time: '6:00 PM' }
-  }
-  if (day === 5) {
-    return { label: 'Committee Meeting', type: 'committee', time: '6:00 PM' }
-  }
-  return null
+const TYPE_COLORS = {
+  gbm: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#b8963e]' },
+  training: { bg: 'bg-[#dbeafe]', text: 'text-[#1e40af]', dot: 'bg-[#3b82f6]' },
+  committee: { bg: 'bg-[#ede9fe]', text: 'text-[#5b21b6]', dot: 'bg-[#8b5cf6]' },
+  social: { bg: 'bg-[#d1fae5]', text: 'text-[#065f46]', dot: 'bg-[#10b981]' },
+  conference: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#f59e0b]' },
+  default: { bg: 'bg-[#e8eef7]', text: 'text-[#1e3a6e]', dot: 'bg-[#1e3a6e]' },
 }
 
 function getDaysInMonth(year, month) {
@@ -35,31 +18,61 @@ function getFirstDayOfMonth(year, month) {
   return new Date(year, month, 1).getDay()
 }
 
-const TYPE_COLORS = {
-  gbm: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#b8963e]' },
-  training: { bg: 'bg-[#dbeafe]', text: 'text-[#1e40af]', dot: 'bg-[#3b82f6]' },
-  committee: { bg: 'bg-[#ede9fe]', text: 'text-[#5b21b6]', dot: 'bg-[#8b5cf6]' },
-  social: { bg: 'bg-[#d1fae5]', text: 'text-[#065f46]', dot: 'bg-[#10b981]' },
-  conference: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#f59e0b]' },
-}
+function expandRecurringEvents(events) {
+  const expanded = []
 
-const LEGEND = [
-  { label: 'GBM', type: 'gbm' },
-  { label: 'Training', type: 'training' },
-  { label: 'Committee', type: 'committee' },
-  { label: 'Social', type: 'social' },
-]
+  for (const event of events) {
+    if (event.is_cancelled) continue
+
+    if (!event.is_recurring) {
+      expanded.push(event)
+      continue
+    }
+
+    const start = new Date(event.start_date)
+    const end = event.recurrence_end_date ? new Date(event.recurrence_end_date) : new Date(start.getFullYear(), 11, 31)
+    const rule = event.recurrence_rule
+
+    let current = new Date(start)
+    while (current <= end) {
+      expanded.push({
+        ...event,
+        start_date: current.toISOString().split('T')[0],
+        _isOccurrence: true,
+      })
+
+      if (rule === 'daily') current.setDate(current.getDate() + 1)
+      else if (rule === 'weekly') current.setDate(current.getDate() + 7)
+      else if (rule === 'biweekly') current.setDate(current.getDate() + 14)
+      else if (rule === 'monthly') current.setMonth(current.getMonth() + 1)
+      else break
+    }
+  }
+
+  return expanded
+}
 
 export default function News() {
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
+  const [events, setEvents] = useState([])
   const [news, setNews] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    fetchEvents()
     fetchNews()
   }, [])
+
+  async function fetchEvents() {
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .eq('is_cancelled', false)
+      .order('start_date')
+    setEvents(expandRecurringEvents(data ?? []))
+  }
 
   async function fetchNews() {
     const { data } = await supabase
@@ -73,21 +86,13 @@ export default function News() {
   }
 
   function prevMonth() {
-    if (currentMonth === 0) {
-      setCurrentMonth(11)
-      setCurrentYear(y => y - 1)
-    } else {
-      setCurrentMonth(m => m - 1)
-    }
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
+    else setCurrentMonth(m => m - 1)
   }
 
   function nextMonth() {
-    if (currentMonth === 11) {
-      setCurrentMonth(0)
-      setCurrentYear(y => y + 1)
-    } else {
-      setCurrentMonth(m => m + 1)
-    }
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
+    else setCurrentMonth(m => m + 1)
   }
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
@@ -98,20 +103,14 @@ export default function News() {
   for (let i = 0; i < firstDay; i++) calendarDays.push(null)
   for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d)
 
-  // Upcoming events list
-  const upcomingEvents = []
-  for (let m = currentMonth; m <= 11; m++) {
-    const days = getDaysInMonth(currentYear, m)
-    for (let d = 1; d <= days; d++) {
-      const date = new Date(currentYear, m, d)
-      const event = getEventType(date)
-      if (event && date >= today) {
-        upcomingEvents.push({ date, ...event })
-        if (upcomingEvents.length >= 10) break
-      }
-    }
-    if (upcomingEvents.length >= 10) break
+  function getEventsForDay(day) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return events.filter(e => e.start_date === dateStr)
   }
+
+  const upcomingEvents = events
+    .filter(e => new Date(e.start_date) >= today)
+    .slice(0, 10)
 
   return (
     <div>
@@ -134,34 +133,22 @@ export default function News() {
           <div className="mb-8">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Schedule</p>
             <h2 className="font-serif text-3xl font-bold text-gray-900">
-              Meeting <em className="italic text-[#1e3a6e]">Calendar</em>
+              Event <em className="italic text-[#1e3a6e]">Calendar</em>
             </h2>
           </div>
 
           {/* Controls */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <button
-                onClick={prevMonth}
-                className="w-8 h-8 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:bg-[#e8eef7] hover:text-[#1e3a6e] transition-colors"
-              >
+              <button onClick={prevMonth}
+                className="w-8 h-8 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:bg-[#e8eef7] hover:text-[#1e3a6e] transition-colors">
                 &#8249;
               </button>
               <span className="font-serif text-lg font-semibold text-gray-900 min-w-[180px] text-center">{monthName}</span>
-              <button
-                onClick={nextMonth}
-                className="w-8 h-8 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:bg-[#e8eef7] hover:text-[#1e3a6e] transition-colors"
-              >
+              <button onClick={nextMonth}
+                className="w-8 h-8 border border-gray-200 rounded flex items-center justify-center text-gray-600 hover:bg-[#e8eef7] hover:text-[#1e3a6e] transition-colors">
                 &#8250;
               </button>
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              {LEGEND.map(l => (
-                <div key={l.type} className="flex items-center gap-1.5">
-                  <div className={`w-2.5 h-2.5 rounded-full ${TYPE_COLORS[l.type].dot}`} />
-                  <span className="text-xs text-gray-500">{l.label}</span>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -175,31 +162,25 @@ export default function News() {
               ))}
               {calendarDays.map((day, i) => {
                 if (!day) return <div key={`empty-${i}`} className="min-h-[90px] bg-gray-50 border-r border-b border-gray-200" />
+                const dayEvents = getEventsForDay(day)
                 const date = new Date(currentYear, currentMonth, day)
-                const event = getEventType(date)
                 const isToday = date.toDateString() === today.toDateString()
-                const isHoliday = HOLIDAYS.includes(date.toISOString().split('T')[0])
-                const colors = event ? TYPE_COLORS[event.type] : null
 
                 return (
-                  <div
-                    key={day}
-                    className={`min-h-[90px] p-1.5 border-r border-b border-gray-200 ${isToday ? 'bg-[#fffbf0]' : isHoliday ? 'bg-red-50' : 'bg-white'} ${(i + 1) % 7 === 0 ? 'border-r-0' : ''}`}
-                  >
+                  <div key={day}
+                    className={`min-h-[90px] p-1.5 border-r border-b border-gray-200 ${isToday ? 'bg-[#fffbf0]' : 'bg-white'} ${(i + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
                     <div className={`text-xs font-semibold mb-1 w-6 h-6 flex items-center justify-center rounded-full
                       ${isToday ? 'bg-[#1e3a6e] text-white' : 'text-gray-500'}`}>
                       {day}
                     </div>
-                    {event && colors && (
-                      <div className={`text-[10px] font-medium px-1 py-0.5 rounded ${colors.bg} ${colors.text} truncate`}>
-                        {event.label}
-                      </div>
-                    )}
-                    {isHoliday && (
-                      <div className="text-[10px] font-medium px-1 py-0.5 rounded bg-red-100 text-red-700 truncate">
-                        Holiday
-                      </div>
-                    )}
+                    {dayEvents.map((ev, idx) => {
+                      const colors = TYPE_COLORS[ev.category] ?? TYPE_COLORS.default
+                      return (
+                        <div key={idx} className={`text-[10px] font-medium px-1 py-0.5 rounded ${colors.bg} ${colors.text} truncate mb-0.5`}>
+                          {ev.name}
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })}
@@ -209,25 +190,26 @@ export default function News() {
           {/* Upcoming list */}
           <div className="mt-10">
             <h3 className="font-serif text-xl font-bold text-gray-900 mb-4">
-              Upcoming <em className="italic text-[#1e3a6e]">Meetings</em>
+              Upcoming <em className="italic text-[#1e3a6e]">Events</em>
             </h3>
             <div className="flex flex-col divide-y divide-gray-100">
               {upcomingEvents.length > 0 ? upcomingEvents.map((ev, i) => {
-                const colors = TYPE_COLORS[ev.type]
+                const colors = TYPE_COLORS[ev.category] ?? TYPE_COLORS.default
                 return (
                   <div key={i} className="flex items-center gap-4 py-3">
                     <div className="text-xs font-semibold text-gray-500 min-w-[130px]">
-                      {ev.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(ev.start_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </div>
                     <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${colors.dot}`} />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{ev.label}</p>
-                      <p className="text-xs text-gray-400">{ev.time}</p>
+                      <p className="text-sm font-medium text-gray-900">{ev.name}</p>
+                      {ev.event_time && <p className="text-xs text-gray-400">{ev.event_time}</p>}
+                      {ev.event_location && <p className="text-xs text-gray-400">{ev.event_location}</p>}
                     </div>
                   </div>
                 )
               }) : (
-                <p className="text-sm text-gray-400 py-4">No upcoming meetings this period.</p>
+                <p className="text-sm text-gray-400 py-4">No upcoming events scheduled.</p>
               )}
             </div>
           </div>
@@ -243,12 +225,9 @@ export default function News() {
               News <em className="italic text-[#1e3a6e]">&amp; Announcements</em>
             </h2>
           </div>
-
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-gray-200 rounded-lg h-64 animate-pulse" />
-              ))}
+              {[1, 2, 3].map(i => <div key={i} className="bg-gray-200 rounded-lg h-64 animate-pulse" />)}
             </div>
           ) : news.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
