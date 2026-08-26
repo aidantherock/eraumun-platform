@@ -21,15 +21,11 @@ export default function AdminUsers() {
   }, [])
 
   async function fetchUsers() {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*, user_roles(*, roles(*))')
-    .order('created_at', { ascending: false })
-
-  console.log('Users:', data, error)
-  setUsers(data ?? [])
+  const res = await fetch('/.netlify/functions/admin-get-users')
+  const data = await res.json()
+  setUsers(Array.isArray(data) ? data : [])
   setLoading(false)
-}
+  }
 
   async function fetchRoles() {
     const { data } = await supabase.from('roles').select('*').order('level', { ascending: false })
