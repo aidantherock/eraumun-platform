@@ -2,9 +2,6 @@
   command = "npm run build"
   publish = "dist"
 
-[build.environment]
-  VITE_SUPABASE_URL = "https://vtwogeznktkaqqvndduh.supabase.co"
-
 [[redirects]]
   from = "/*"
   to = "/index.html"
