@@ -16,13 +16,14 @@ export default function EventDetail() {
   const [attendees, setAttendees] = useState([])
   const [userCommittees, setUserCommittees] = useState([])
   const [announcements, setAnnouncements] = useState([])
+  const [checklist, setChecklist] = useState(null)
+  const [checklistItems, setChecklistItems] = useState([])
+  const [completions, setCompletions] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('Overview')
 
   useEffect(() => {
-    if (eventId && profile?.id) {
-      fetchAll()
-    }
+    if (eventId && profile?.id) fetchAll()
   }, [eventId, profile?.id])
 
   async function fetchAll() {
@@ -33,6 +34,7 @@ export default function EventDetail() {
       fetchFiles(),
       fetchAnnouncements(),
       fetchUserCommittees(),
+      fetchChecklist(),
       isStaffOrAbove ? fetchAttendees() : Promise.resolve(),
     ])
     setLoading(false)
@@ -91,9 +93,7 @@ export default function EventDetail() {
       .from('event_roles')
       .select('id')
       .eq('event_id', eventId)
-
     if (!eventRoles?.length) return
-
     const { data } = await supabase
       .from('user_event_roles')
       .select('*, profiles(id, first_name, last_name, email, school, avatar_url)')
@@ -108,6 +108,51 @@ export default function EventDetail() {
       .select('committee_id')
       .eq('user_id', profile.id)
     setUserCommittees(data?.map(r => r.committee_id) ?? [])
+  }
+
+  async function fetchChecklist() {
+    const { data: template } = await supabase
+      .from('checklist_templates')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('is_published', true)
+      .single()
+
+    if (!template) return
+
+    setChecklist(template)
+
+    const { data: items } = await supabase
+      .from('checklist_items')
+      .select('*')
+      .eq('template_id', template.id)
+      .eq('is_active', true)
+      .order('position')
+    setChecklistItems(items ?? [])
+
+    if (items?.length) {
+      const { data: comp } = await supabase
+        .from('checklist_completions')
+        .select('item_id')
+        .eq('user_id', profile.id)
+        .in('item_id', items.map(i => i.id))
+      setCompletions(comp?.map(c => c.item_id) ?? [])
+    }
+  }
+
+  async function toggleCompletion(itemId) {
+    const isCompleted = completions.includes(itemId)
+    if (isCompleted) {
+      await supabase.from('checklist_completions')
+        .delete()
+        .eq('item_id', itemId)
+        .eq('user_id', profile.id)
+      setCompletions(prev => prev.filter(id => id !== itemId))
+    } else {
+      await supabase.from('checklist_completions')
+        .insert({ item_id: itemId, user_id: profile.id })
+      setCompletions(prev => [...prev, itemId])
+    }
   }
 
   const visibleTabs = TABS.filter(t => {
@@ -129,6 +174,13 @@ export default function EventDetail() {
     acc[cat].push(file)
     return acc
   }, {})
+
+  const completedCount = completions.length
+  const totalRequired = checklistItems.filter(i => i.is_required).length
+  const completedRequired = checklistItems.filter(i => i.is_required && completions.includes(i.id)).length
+  const checklistProgress = checklistItems.length > 0
+    ? Math.round((completedCount / checklistItems.length) * 100)
+    : 0
 
   if (loading) {
     return (
@@ -203,10 +255,8 @@ export default function EventDetail() {
               </div>
             </div>
             {isStaffOrAbove && (
-              <Link
-                to={`/admin/event/${eventId}`}
-                className="text-xs border border-white/30 text-white font-semibold px-4 py-2 rounded hover:bg-white/10 transition-colors flex-shrink-0"
-              >
+              <Link to={`/admin/event/${eventId}`}
+                className="text-xs border border-white/30 text-white font-semibold px-4 py-2 rounded hover:bg-white/10 transition-colors flex-shrink-0">
                 Admin Panel
               </Link>
             )}
@@ -215,15 +265,9 @@ export default function EventDetail() {
           {/* Tabs */}
           <div className="flex gap-1 mt-6 border-b border-white/10">
             {visibleTabs.map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
+              <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px
-                  ${tab === t
-                    ? 'border-[#d4af62] text-white'
-                    : 'border-transparent text-white/50 hover:text-white'
-                  }`}
-              >
+                  ${tab === t ? 'border-[#d4af62] text-white' : 'border-transparent text-white/50 hover:text-white'}`}>
                 {t}
               </button>
             ))}
@@ -288,7 +332,9 @@ export default function EventDetail() {
               )}
             </div>
 
+            {/* Sidebar */}
             <div className="space-y-4">
+              {/* Quick info */}
               <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Info</h3>
                 <div className="space-y-3">
@@ -306,16 +352,40 @@ export default function EventDetail() {
                 </div>
               </div>
 
+              {/* Checklist progress */}
+              {checklist && checklistItems.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900">Pre-Conference Checklist</h3>
+                    <span className="text-xs font-bold text-[#1e3a6e]">{checklistProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
+                    <div
+                      className="bg-[#1e3a6e] h-2 rounded-full transition-all"
+                      style={{ width: `${checklistProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {completedCount} of {checklistItems.length} items completed
+                    {totalRequired > 0 && ` · ${completedRequired}/${totalRequired} required`}
+                  </p>
+                  <Link
+                    to={`/portal/events/${eventId}/checklist`}
+                    className="block w-full text-center text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-2.5 rounded-lg hover:bg-[#2d538f] transition-colors"
+                  >
+                    View Checklist
+                  </Link>
+                </div>
+              )}
+
+              {/* My committees */}
               {userCommittees.length > 0 && (
                 <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                   <h3 className="font-semibold text-gray-900 mb-3">My Committees</h3>
                   <div className="flex flex-col gap-2">
                     {committees.filter(c => userCommittees.includes(c.id)).map(c => (
-                      <Link
-                        key={c.id}
-                        to={`/portal/committee/${c.id}`}
-                        className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:border-[#1e3a6e] hover:bg-[#e8eef7] transition-all"
-                      >
+                      <Link key={c.id} to={`/portal/committee/${c.id}`}
+                        className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:border-[#1e3a6e] hover:bg-[#e8eef7] transition-all">
                         {c.logo_url ? (
                           <img src={c.logo_url} alt={c.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                         ) : (
@@ -353,7 +423,6 @@ export default function EventDetail() {
                 </a>
               )}
             </div>
-
             {Object.keys(scheduleByDay).length > 0 ? (
               Object.entries(scheduleByDay).map(([day, items]) => (
                 <div key={day} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -381,7 +450,7 @@ export default function EventDetail() {
               ))
             ) : (
               <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
-                <p className="text-gray-400 text-sm">No schedule posted yet. Check back soon.</p>
+                <p className="text-gray-400 text-sm">No schedule posted yet.</p>
               </div>
             )}
           </div>
@@ -394,7 +463,6 @@ export default function EventDetail() {
               <h2 className="font-serif text-xl font-bold text-gray-900">Committees</h2>
               <p className="text-sm text-gray-500 mt-0.5">{committees.length} committee{committees.length !== 1 ? 's' : ''} under this event.</p>
             </div>
-
             {committees.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {committees.map(committee => {
@@ -419,17 +487,11 @@ export default function EventDetail() {
                         </div>
                       </div>
                       <div className="px-5 py-4">
-                        {committee.topic && (
-                          <p className="text-xs text-gray-500 mb-3 leading-relaxed">{committee.topic}</p>
-                        )}
-                        {committee.description && (
-                          <p className="text-xs text-gray-400 mb-3 leading-relaxed line-clamp-2">{committee.description}</p>
-                        )}
+                        {committee.topic && <p className="text-xs text-gray-500 mb-3 leading-relaxed">{committee.topic}</p>}
+                        {committee.description && <p className="text-xs text-gray-400 mb-3 leading-relaxed line-clamp-2">{committee.description}</p>}
                         {hasAccess ? (
-                          <Link
-                            to={`/portal/committee/${committee.id}`}
-                            className="block text-center text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-2 rounded hover:bg-[#2d538f] transition-colors"
-                          >
+                          <Link to={`/portal/committee/${committee.id}`}
+                            className="block text-center text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-2 rounded hover:bg-[#2d538f] transition-colors">
                             {isStaffOrAbove ? 'Manage Committee' : 'Enter Committee'}
                           </Link>
                         ) : (
@@ -457,7 +519,6 @@ export default function EventDetail() {
               <h2 className="font-serif text-xl font-bold text-gray-900">Files & Resources</h2>
               <p className="text-sm text-gray-500 mt-0.5">Documents and resources for this event.</p>
             </div>
-
             {Object.keys(filesByCategory).length > 0 ? (
               Object.entries(filesByCategory).map(([category, categoryFiles]) => (
                 <div key={category} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -506,7 +567,6 @@ export default function EventDetail() {
                 Manage in Admin
               </Link>
             </div>
-
             {attendees.length > 0 ? (
               <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div className="divide-y divide-gray-100">
@@ -538,36 +598,34 @@ export default function EventDetail() {
         )}
 
         {/* Settings */}
-{tab === 'Settings' && isStaffOrAbove && (
-  <div className="space-y-6">
-    <div>
-      <h2 className="font-serif text-xl font-bold text-gray-900">Event Settings</h2>
-      <p className="text-sm text-gray-500 mt-0.5">Manage this event from the admin panel.</p>
-    </div>
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-      <div className="grid grid-cols-2 gap-4">
-        <Link
-          to={`/portal/control-room/${eventId}`}
-          className="flex items-center justify-center col-span-2 border border-[#1e3a6e] text-[#1e3a6e] font-semibold text-sm px-4 py-3 rounded-lg hover:bg-[#e8eef7] transition-colors"
-        >
-          ⚡ Staff Control Room
-        </Link>
-        {[
-          { label: 'Event Admin Panel', to: `/admin/event/${eventId}` },
-          { label: 'Manage Committees', to: `/admin/event/${eventId}/committees` },
-          { label: 'Assign Roles', to: `/admin/event/${eventId}/roles` },
-          { label: 'Manage Attendees', to: `/admin/event/${eventId}/attendees` },
-          { label: 'View Submissions', to: `/admin/event/${eventId}/submissions` },
-        ].map(link => (
-          <Link key={link.to} to={link.to}
-            className="flex items-center justify-center border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-3 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
-            {link.label}
-          </Link>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+        {tab === 'Settings' && isStaffOrAbove && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-serif text-xl font-bold text-gray-900">Event Settings</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Manage this event from the admin panel.</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <Link to={`/portal/control-room/${eventId}`}
+                  className="flex items-center justify-center col-span-2 border border-[#1e3a6e] text-[#1e3a6e] font-semibold text-sm px-4 py-3 rounded-lg hover:bg-[#e8eef7] transition-colors">
+                  ⚡ Staff Control Room
+                </Link>
+                {[
+                  { label: 'Event Admin Panel', to: `/admin/event/${eventId}` },
+                  { label: 'Manage Committees', to: `/admin/event/${eventId}/committees` },
+                  { label: 'Assign Roles', to: `/admin/event/${eventId}/roles` },
+                  { label: 'Manage Attendees', to: `/admin/event/${eventId}/attendees` },
+                  { label: 'View Submissions', to: `/admin/event/${eventId}/submissions` },
+                ].map(link => (
+                  <Link key={link.to} to={link.to}
+                    className="flex items-center justify-center border border-gray-200 text-gray-600 font-semibold text-sm px-4 py-3 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

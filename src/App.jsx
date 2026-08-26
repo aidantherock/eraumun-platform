@@ -38,6 +38,7 @@ import EventDetail from './pages/portal/EventDetail'
 import Directory from './pages/portal/Directory'
 import MemberProfile from './pages/portal/MemberProfile'
 import StaffControlRoom from './pages/portal/StaffControlRoom'
+import EventChecklist from './pages/portal/EventChecklist'
 
 // Admin pages
 import AdminLayout from './layouts/AdminLayout'
@@ -64,6 +65,7 @@ import EventAdminFiles from './pages/admin/event/Files'
 import EventAdminGuestDelegates from './pages/admin/event/GuestDelegates'
 import EventAdminExport from './pages/admin/event/Export'
 import EventAdminAwards from './pages/admin/event/Awards'
+import EventAdminChecklist from './pages/admin/event/Checklist'
 
 // Committee pages
 import CommitteeLayout from './layouts/CommitteeLayout'
@@ -123,6 +125,7 @@ function App() {
           <Route path="directory" element={<Directory />} />
           <Route path="directory/:memberId" element={<MemberProfile />} />
           <Route path="control-room/:eventId" element={<StaffControlRoom />} />
+          <Route path="checklist" element={<EventAdminChecklist />} />
         </Route>
 
         {/* ── Committee workspace routes ── */}
@@ -177,6 +180,7 @@ function App() {
           <Route path="export" element={<EventAdminExport />} />
           <Route path="awards" element={<EventAdminAwards />} />
           <Route path="resources" element={<CommitteeResources />} />
+          <Route path="events/:eventId/checklist" element={<EventChecklist />} />
         </Route>
 
       </Routes>
