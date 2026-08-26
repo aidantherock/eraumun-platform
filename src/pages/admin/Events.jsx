@@ -171,11 +171,17 @@ export default function AdminEvents() {
       is_cancelled: false,
       created_by: profile.id,
       organization_id: profile.organization_id,
+      event_time: form.event_time || null,
+      recurrence_end_date: form.recurrence_end_date || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
     })
     if (!error) {
       setShowForm(false)
       setForm(EMPTY_FORM)
       fetchEvents()
+    } else {
+      console.error(error)
     }
     setSubmitting(false)
   }
@@ -183,7 +189,13 @@ export default function AdminEvents() {
   async function handleUpdate(e) {
     e.preventDefault()
     setSubmitting(true)
-    const { error } = await supabase.from('events').update(form).eq('id', selected.id)
+    const { error } = await supabase.from('events').update({
+      ...form,
+      event_time: form.event_time || null,
+      recurrence_end_date: form.recurrence_end_date || null,
+      start_date: form.start_date || null,
+      end_date: form.end_date || null,
+    }).eq('id', selected.id)
     if (!error) {
       setEditing(false)
       setSelected(null)
@@ -251,7 +263,6 @@ export default function AdminEvents() {
         </button>
       </div>
 
-      {/* Create form */}
       {showForm && !editing && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
@@ -262,7 +273,6 @@ export default function AdminEvents() {
         </div>
       )}
 
-      {/* Edit modal */}
       {editing && selected && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -314,7 +324,6 @@ export default function AdminEvents() {
         </div>
       )}
 
-      {/* Events list */}
       <div className="flex flex-col gap-4">
         {loading ? (
           [1, 2, 3].map(i => <div key={i} className="bg-gray-100 rounded-xl h-32 animate-pulse" />)
@@ -344,6 +353,9 @@ export default function AdminEvents() {
                 )}
                 {event.is_recurring && event.recurrence_rule && (
                   <p className="text-xs text-purple-500 mt-0.5 capitalize">Repeats {event.recurrence_rule}</p>
+                )}
+                {event.committees?.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">{event.committees.length} committee{event.committees.length !== 1 ? 's' : ''}</p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
