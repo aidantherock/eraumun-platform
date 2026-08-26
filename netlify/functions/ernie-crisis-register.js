@@ -1,8 +1,9 @@
 const { createClient } = require('@supabase/supabase-js')
 const { sendEmail } = require('./send-email')
+const templates = require('./emails/templates')
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  'https://vtwogeznktkaqqvndduh.supabase.co',
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
@@ -37,6 +38,14 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Must confirm age and accept terms' }) }
     }
 
+    // Check capacity — waitlist if over 100
+    const { count } = await supabase
+      .from('ernie_crisis_registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'registered')
+
+    const isWaitlisted = count >= 100
+
     // Store in Supabase
     const { error: dbError } = await supabase
       .from('ernie_crisis_registrations')
@@ -54,47 +63,57 @@ exports.handler = async (event) => {
         additional_info: additional_info ?? null,
         age_confirmed: !!age_confirmed,
         tos_accepted: !!tos_accepted,
-        status: 'registered',
+        status: isWaitlisted ? 'waitlisted' : 'registered',
       })
 
     if (dbError) throw dbError
 
-    // Notify admins
-    await sendEmail({
-      to: 'info@eraumun.com',
-      subject: `New Ernie Crisis Registration - ${registration_type === 'team' ? team_name ?? 'Team' : `${first_name} ${last_name}`}`,
-      html: `
-        <h2>New Ernie Crisis Simulation Registration</h2>
-        <p><strong>Type:</strong> ${registration_type === 'team' ? 'Team' : 'Individual'}</p>
-        <p><strong>Name:</strong> ${first_name} ${last_name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>School:</strong> ${school}</p>
-        ${team_name ? `<p><strong>Team Name:</strong> ${team_name}</p>` : ''}
-        ${team_size ? `<p><strong>Team Size:</strong> ${team_size}</p>` : ''}
-        ${experience_level ? `<p><strong>Experience:</strong> ${experience_level}</p>` : ''}
-        ${faculty_advisor_name ? `<p><strong>Faculty Advisor:</strong> ${faculty_advisor_name} (${faculty_advisor_email})</p>` : ''}
-        ${additional_info ? `<p><strong>Additional Info:</strong> ${additional_info}</p>` : ''}
-      `,
-    })
+    // Send confirmation email to registrant
+    if (isWaitlisted) {
+      const template = templates.ernieCrisisWaitlisted({ firstName: first_name })
+      await sendEmail({ to: email, ...template })
+    } else {
+      const template = templates.ernieCrisisRegistration({
+        firstName: first_name,
+        registrationType: registration_type,
+        teamName: team_name ?? null,
+      })
+      await sendEmail({ to: email, ...template })
+    }
 
-    // Confirm to registrant
-    await sendEmail({
-      to: email,
-      subject: 'Ernie Crisis Simulation — Registration Received',
-      html: `
-        <h2>Thanks for registering, ${first_name}!</h2>
-        <p>We have received your registration for the Ernie Crisis Simulation hosted by ERAU Model United Nations.</p>
-        <p>We will be in touch with confirmation details, event information, and next steps.</p>
-        ${registration_type === 'team' ? `<p>Your team <strong>${team_name}</strong> has been registered.</p>` : ''}
-        <p>If you have any questions in the meantime, contact us at <a href="mailto:info@eraumun.com">info@eraumun.com</a>.</p>
-        <br>
-        <p>Best,<br>ERAU Model United Nations</p>
-      `,
-    })
+    // Notify admins
+    const { data: eboard } = await supabase
+      .from('profiles')
+      .select('email, user_roles(roles(level))')
+      .eq('status', 'approved')
+
+    const eboardEmails = (eboard ?? [])
+      .filter(p => p.user_roles?.some(ur => (ur.roles?.level ?? 0) >= 80))
+      .map(p => p.email)
+
+    for (const adminEmail of eboardEmails) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `New Ernie Crisis Registration - ${registration_type === 'team' ? team_name ?? 'Team' : `${first_name} ${last_name}`}`,
+        html: `
+          <h2>New Ernie Crisis Simulation Registration</h2>
+          <p><strong>Type:</strong> ${registration_type === 'team' ? 'Team' : 'Individual'}</p>
+          <p><strong>Name:</strong> ${first_name} ${last_name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>School:</strong> ${school}</p>
+          <p><strong>Status:</strong> ${isWaitlisted ? 'Waitlisted' : 'Registered'}</p>
+          ${team_name ? `<p><strong>Team Name:</strong> ${team_name}</p>` : ''}
+          ${team_size ? `<p><strong>Team Size:</strong> ${team_size}</p>` : ''}
+          ${experience_level ? `<p><strong>Experience:</strong> ${experience_level}</p>` : ''}
+          ${faculty_advisor_name ? `<p><strong>Faculty Advisor:</strong> ${faculty_advisor_name} (${faculty_advisor_email})</p>` : ''}
+          ${additional_info ? `<p><strong>Additional Info:</strong> ${additional_info}</p>` : ''}
+        `,
+      })
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true }),
+      body: JSON.stringify({ success: true, waitlisted: isWaitlisted }),
     }
   } catch (err) {
     console.error('Registration error:', err)

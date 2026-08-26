@@ -40,6 +40,7 @@ import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSponsors from './pages/admin/Sponsors'
 import AdminForms from './pages/admin/Forms'
 import AdminEvents from './pages/admin/Events'
+import AdminEmails from './pages/admin/Emails'
 
 // Event Admin pages
 import EventAdminLayout from './layouts/EventAdminLayout'
@@ -122,6 +123,7 @@ function App() {
           <Route path="sponsors" element={<AdminSponsors />} />
           <Route path="forms" element={<AdminForms />} />
           <Route path="events" element={<AdminEvents />} />
+          <Route path="emails" element={<AdminEmails />} />
         </Route>
 
         {/* ── Event Admin routes ── */}
