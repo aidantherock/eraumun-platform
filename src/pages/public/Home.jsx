@@ -3,15 +3,30 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
 export default function Home() {
-  const [sponsors, setSponsors] = useState([])
-  const [upcomingEvents, setUpcomingEvents] = useState([])
   const [news, setNews] = useState([])
+  const [sponsors, setSponsors] = useState([])
+  const [photos, setPhotos] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchSponsors()
-    fetchUpcomingEvents()
-    fetchNews()
+    fetchAll()
   }, [])
+
+  async function fetchAll() {
+    await Promise.all([fetchNews(), fetchSponsors(), fetchPhotos()])
+    setLoading(false)
+  }
+
+  async function fetchNews() {
+    const { data } = await supabase
+      .from('news_posts')
+      .select('*')
+      .eq('status', 'published')
+      .eq('visibility', 'public')
+      .order('published_at', { ascending: false })
+      .limit(3)
+    setNews(data ?? [])
+  }
 
   async function fetchSponsors() {
     const { data } = await supabase
@@ -23,120 +38,97 @@ export default function Home() {
     setSponsors(data ?? [])
   }
 
-  async function fetchUpcomingEvents() {
+  async function fetchPhotos() {
     const { data } = await supabase
-      .from('events')
+      .from('photo_gallery')
       .select('*')
-      .eq('status', 'active')
-      .gte('start_date', new Date().toISOString().split('T')[0])
-      .order('start_date')
-      .limit(3)
-    setUpcomingEvents(data ?? [])
-  }
-
-  async function fetchNews() {
-    const { data } = await supabase
-      .from('news_posts')
-      .select('*')
-      .eq('visibility', 'public')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(3)
-    setNews(data ?? [])
+      .eq('is_public', true)
+      .order('display_order')
+      .order('created_at', { ascending: false })
+      .limit(8)
+    setPhotos(data ?? [])
   }
 
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-[#1e3a6e] via-[#162d58] to-[#0f2040] text-white px-6 py-24">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#d4af62] mb-4">
+      <section className="relative bg-gradient-to-br from-[#1e3a6e] via-[#162d58] to-[#0f2040] text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,255,255,.1) 50px, rgba(255,255,255,.1) 51px), repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,255,255,.1) 50px, rgba(255,255,255,.1) 51px)'
+          }} />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-6 py-24 md:py-32">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#d4af62] mb-4">
               Embry-Riddle Aeronautical University
             </p>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold leading-tight mb-4">
-              Where Diplomacy <em className="italic text-[#d4af62]">Takes Flight</em>
+            <h1 className="font-serif text-5xl md:text-6xl font-bold leading-[1.1] mb-6">
+              Model <em className="italic text-[#d4af62]">United</em><br />Nations
             </h1>
-            <p className="text-white/70 text-base leading-relaxed mb-8 font-light max-w-lg">
-              ERAU Model United Nations prepares the next generation of global leaders through debate, diplomacy, and collaborative problem-solving.
+            <p className="text-white/70 text-lg leading-relaxed font-light mb-8 max-w-xl">
+              Developing the next generation of global leaders through diplomacy, debate, and international cooperation at Embry-Riddle Aeronautical University.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/register" className="bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors">
+            <div className="flex items-center gap-4 flex-wrap">
+              <Link to="/register"
+                className="bg-[#b8963e] text-white font-semibold px-7 py-3 rounded hover:bg-[#d4af62] transition-colors text-sm">
                 Join ERAU-MUN
               </Link>
-              <Link to="/about" className="border border-white/35 text-white font-semibold text-sm px-6 py-3 rounded hover:border-white/70 transition-colors">
+              <Link to="/about"
+                className="border border-white/30 text-white font-semibold px-7 py-3 rounded hover:bg-white/10 transition-colors text-sm">
                 Learn More
               </Link>
             </div>
           </div>
-
-          {/* Upcoming Events Card */}
-          <div className="bg-white/7 border border-white/13 rounded-xl p-6 backdrop-blur-sm">
-            <p className="font-serif text-[#d4af62] text-base font-semibold mb-4">Upcoming Events</p>
-            <div className="flex flex-col gap-3">
-              {upcomingEvents.length > 0 ? upcomingEvents.map(event => (
-                <div key={event.id} className="flex gap-3 items-start bg-white/5 rounded-lg px-3 py-3">
-                  <div className="w-2 h-2 rounded-full bg-[#d4af62] flex-shrink-0 mt-1.5" />
-                  <div>
-                    <p className="text-sm font-medium text-white">{event.name}</p>
-                    <p className="text-xs text-white/48 mt-0.5">
-                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-              )) : (
-                <p className="text-sm text-white/40 italic">No upcoming events scheduled.</p>
-              )}
-            </div>
-            <Link to="/news" className="text-xs text-[#d4af62] font-semibold mt-4 block hover:underline">
-              View full calendar
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Info Strip */}
-      <section className="bg-[#1e3a6e] px-6 py-5">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* Stats */}
+      <section className="bg-[#0f2040] px-6 py-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { value: '2024', label: 'Founded' },
-            { value: 'ERAU', label: 'Daytona Beach' },
-            { value: '4', label: 'Strategic Pillars' },
-            { value: 'Open', label: 'Membership' },
-          ].map(item => (
-            <div key={item.label}>
-              <p className="font-serif text-[#d4af62] text-2xl font-bold">{item.value}</p>
-              <p className="text-white/55 text-xs uppercase tracking-widest mt-1">{item.label}</p>
+            { value: '10+', label: 'Conferences Attended' },
+            { value: '50+', label: 'Active Members' },
+            { value: '5+', label: 'Years Active' },
+            { value: '1', label: 'Hosted Conference' },
+          ].map(stat => (
+            <div key={stat.label} className="text-center">
+              <p className="font-serif text-3xl font-bold text-[#d4af62]">{stat.value}</p>
+              <p className="text-xs text-white/50 mt-1 uppercase tracking-widest">{stat.label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* About Pillars */}
+      {/* About */}
       <section className="px-6 py-20 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-14 items-start">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Who We Are</p>
-            <h2 className="font-serif text-3xl font-bold text-gray-900 mb-3 leading-snug">
-              Building the Next Generation of <em className="italic text-[#1e3a6e]">Global Leaders</em>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-3">Who We Are</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-5">
+              Diplomacy meets <em className="italic text-[#1e3a6e]">aviation</em>
             </h2>
-            <p className="text-gray-500 text-sm leading-relaxed font-light mb-6">
-              ERAU-MUN is a student-run organization dedicated to fostering diplomacy, critical thinking, and international awareness through Model United Nations conferences and events.
+            <p className="text-gray-500 text-base leading-relaxed mb-4">
+              ERAU-MUN is Embry-Riddle Aeronautical University's official Model United Nations organization. We prepare students to engage with global issues through simulated UN conferences, debate, and collaborative problem-solving.
             </p>
-            <Link to="/about" className="text-sm font-semibold text-[#1e3a6e] hover:underline">
-              Learn more about us
+            <p className="text-gray-500 text-base leading-relaxed mb-6">
+              Whether you're a seasoned delegate or attending your first conference, ERAU-MUN offers a welcoming community focused on growth, leadership, and international awareness.
+            </p>
+            <Link to="/about"
+              className="inline-block bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors">
+              About Us
             </Link>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {[
-              { title: 'Outreach', desc: 'Expanding our reach across campus and the broader MUN community.' },
-              { title: 'Revitalized Events', desc: 'Bringing fresh energy to our General Body Meetings, training sessions, and socials.' },
-              { title: 'Intercollegiate Competition', desc: 'Representing ERAU at conferences across the country.' },
-              { title: 'ErnieMUN', desc: "Launching ERAU's first hosted intercollegiate MUN conference." },
-            ].map(pillar => (
-              <div key={pillar.title} className="border-l-[3px] border-[#b8963e] pl-4 py-2 bg-white rounded-r">
-                <h4 className="font-semibold text-sm text-[#1e3a6e] mb-1">{pillar.title}</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">{pillar.desc}</p>
+              { title: 'Conferences', desc: 'Compete at regional and national MUN conferences across the country.' },
+              { title: 'Training', desc: 'Regular workshops on resolution writing, public speaking, and diplomacy.' },
+              { title: 'ErnieMUN', desc: 'ERAU\'s own hosted intercollegiate conference open to all schools.' },
+              { title: 'Community', desc: 'A tight-knit team of delegates passionate about global affairs.' },
+            ].map(item => (
+              <div key={item.title} className="bg-gray-50 border border-gray-100 rounded-xl p-5">
+                <p className="font-semibold text-[#1e3a6e] text-sm mb-2">{item.title}</p>
+                <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -146,159 +138,138 @@ export default function Home() {
       {/* News */}
       <section className="px-6 py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-10">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Latest</p>
-            <h2 className="font-serif text-3xl font-bold text-gray-900">News <em className="italic text-[#1e3a6e]">&amp; Updates</em></h2>
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Latest</p>
+              <h2 className="font-serif text-3xl font-bold text-gray-900">
+                News <em className="italic text-[#1e3a6e]">&amp; Updates</em>
+              </h2>
+            </div>
+            <Link to="/news" className="text-sm text-[#1e3a6e] font-semibold hover:underline hidden md:block">
+              View all →
+            </Link>
           </div>
-          {news.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[1, 2, 3].map(i => <div key={i} className="bg-gray-200 rounded-lg h-64 animate-pulse" />)}
+            </div>
+          ) : news.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {news.map(post => (
-                <div key={post.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                  <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center">
-                    <span className="font-serif text-3xl text-white/13 italic">MUN</span>
-                  </div>
+                <Link key={post.id} to={`/news/${post.slug}`}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all block">
+                  {post.cover_image_url ? (
+                    <img src={post.cover_image_url} alt={post.title} className="h-32 w-full object-cover" />
+                  ) : (
+                    <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center">
+                      <span className="font-serif text-3xl text-white/20 italic">MUN</span>
+                    </div>
+                  )}
                   <div className="p-5">
                     <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e] mb-2">{post.category ?? 'News'}</p>
                     <h4 className="font-semibold text-sm text-gray-900 mb-2 leading-snug">{post.title}</h4>
-                    <p className="text-xs text-gray-500 leading-relaxed mb-3">{post.excerpt}</p>
-                    <p className="text-xs text-gray-400">
-                      {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{post.excerpt}</p>
+                    <p className="text-xs text-gray-400 mt-3">
+                      {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', {
+                        month: 'long', day: 'numeric', year: 'numeric'
+                      }) : ''}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
-              <p className="text-gray-400 text-sm">No news posts yet. Check back soon.</p>
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
+              <p className="text-gray-400 text-sm">No news posts yet.</p>
             </div>
           )}
-          <div className="mt-8 text-center">
-            <Link to="/news" className="text-sm font-semibold text-[#1e3a6e] hover:underline">
-              View all news
-            </Link>
+          <div className="text-center mt-8 md:hidden">
+            <Link to="/news" className="text-sm text-[#1e3a6e] font-semibold hover:underline">View all news →</Link>
           </div>
         </div>
       </section>
 
-      {/* Ernie Crisis CTA */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-gradient-to-br from-[#1e3a6e] to-[#162d58] rounded-xl p-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#d4af62] mb-3">Featured Event</p>
-              <h2 className="font-serif text-3xl font-bold text-white mb-3 leading-snug">
-                Ernie <em className="italic text-[#d4af62]">Crisis Simulation</em>
-              </h2>
-              <p className="text-white/70 text-sm leading-relaxed mb-6 font-light">
-                Experience the intensity of crisis committee diplomacy. Open to individuals and teams from any school. Test your skills under pressure in ERAU-MUN's signature event.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link to="/ernie-crisis" className="bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors">
-                  Learn More
-                </Link>
-                <Link to="/ernie-crisis#register" className="border border-white/35 text-white font-semibold text-sm px-6 py-3 rounded hover:border-white/70 transition-colors">
-                  Register Now
-                </Link>
+      {/* Gallery preview */}
+      {photos.length > 0 && (
+        <section className="px-6 py-20 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Memories</p>
+                <h2 className="font-serif text-3xl font-bold text-gray-900">
+                  Photo <em className="italic text-[#1e3a6e]">Gallery</em>
+                </h2>
               </div>
+              <Link to="/gallery" className="text-sm text-[#1e3a6e] font-semibold hover:underline hidden md:block">
+                View all →
+              </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: 'Open', label: 'To All Schools' },
-                { value: 'Teams', label: 'and Individuals' },
-                { value: 'Live', label: 'Crisis Format' },
-                { value: 'ERAU', label: 'Daytona Beach' },
-              ].map(stat => (
-                <div key={stat.label} className="border-l-2 border-[#b8963e] pl-3">
-                  <p className="font-serif text-2xl text-[#d4af62] font-bold leading-none">{stat.value}</p>
-                  <p className="text-xs uppercase tracking-widest text-white/45 mt-1">{stat.label}</p>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {photos.map(photo => (
+                <Link key={photo.id} to="/gallery"
+                  className="group relative rounded-xl overflow-hidden aspect-square shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <img src={photo.photo_url} alt={photo.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                </Link>
               ))}
             </div>
+            <div className="text-center mt-8 md:hidden">
+              <Link to="/gallery" className="text-sm text-[#1e3a6e] font-semibold hover:underline">View all photos →</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Sponsors */}
-      <section className="px-6 py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Our Supporters</p>
-            <h2 className="font-serif text-2xl font-bold text-gray-900">Sponsors <em className="italic text-[#1e3a6e]">&amp; Partners</em></h2>
-          </div>
-          {sponsors.length > 0 ? (
-            <div className="flex flex-wrap justify-center gap-6">
+      {sponsors.length > 0 && (
+        <section className="px-6 py-16 bg-gray-50 border-t border-gray-200">
+          <div className="max-w-7xl mx-auto">
+            <p className="text-center text-xs font-bold uppercase tracking-[0.25em] text-gray-400 mb-8">
+              Our Sponsors
+            </p>
+            <div className="flex items-center justify-center gap-8 flex-wrap">
               {sponsors.map(sponsor => (
-                <div key={sponsor.id} className="bg-white border border-gray-200 rounded-lg px-6 py-4 flex items-center gap-3 shadow-sm">
+                <a key={sponsor.id}
+                  href={sponsor.website_url ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity"
+                >
                   {sponsor.logo_url ? (
-                    <img src={sponsor.logo_url} alt={sponsor.name} className="h-8 w-auto object-contain" />
+                    <img src={sponsor.logo_url} alt={sponsor.name} className="h-10 w-auto object-contain" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#1e3a6e] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {sponsor.initials ?? sponsor.name.charAt(0)}
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
+                      {sponsor.initials}
                     </div>
                   )}
-                  <span className="text-sm font-semibold text-gray-800">{sponsor.name}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-sm text-gray-400 italic">Interested in sponsoring ERAU-MUN?{' '}
-              <Link to="/support#sponsor" className="text-[#1e3a6e] font-medium hover:underline">Learn more</Link>
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Join CTA */}
-      <section className="px-6 py-20 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">Get Started</p>
-            <h2 className="font-serif text-3xl font-bold text-gray-900 mb-3">
-              Ready to <em className="italic text-[#1e3a6e]">Join Us?</em>
-            </h2>
-            <p className="text-gray-500 text-sm leading-relaxed font-light mb-6">
-              Membership is open to all ERAU students. No experience required — just a passion for diplomacy, debate, and making a difference.
-            </p>
-            <div className="flex flex-col gap-3">
-              {[
-                { step: '1', title: 'Attend a GBM', desc: 'Come to one of our General Body Meetings to learn more about the club.' },
-                { step: '2', title: 'Create an Account', desc: 'Register on our platform to access the full member portal.' },
-                { step: '3', title: 'Get Involved', desc: 'Sign up for conferences, training sessions, and events.' },
-              ].map(item => (
-                <div key={item.step} className="flex gap-3 items-start">
-                  <div className="w-7 h-7 rounded-full bg-[#1e3a6e] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {item.step}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-900 mb-0.5">{item.title}</h4>
-                    <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
+                  <span className="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
+                    {sponsor.name}
+                  </span>
+                </a>
               ))}
             </div>
           </div>
-          <div className="bg-[#1e3a6e] rounded-lg p-8 text-white">
-            <h3 className="font-serif text-2xl font-bold mb-2">Become a Member</h3>
-            <p className="text-white/70 text-sm leading-relaxed mb-5 font-light">
-              Join ERAU-MUN and gain access to conference travel, leadership opportunities, networking, and our full member portal.
-            </p>
-            <ul className="flex flex-col gap-2 mb-6">
-              {[
-                'Access to the full member portal',
-                'Conference travel opportunities',
-                'Training and skill development',
-                'Leadership roles available',
-                'Networking with MUN delegates nationwide',
-              ].map(item => (
-                <li key={item} className="flex items-start gap-2 text-sm text-white/80">
-                  <span className="text-[#d4af62] font-bold mt-0.5">&#10003;</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <Link to="/register" className="block text-center bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors">
-              Create Your Account
+        </section>
+      )}
+
+      {/* CTA */}
+      <section className="px-6 py-20 bg-gradient-to-br from-[#1e3a6e] to-[#0f2040] text-white">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#d4af62] mb-3">Get Involved</p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4">
+            Ready to make your <em className="italic text-[#d4af62]">mark</em>?
+          </h2>
+          <p className="text-white/60 text-base leading-relaxed mb-8 max-w-xl mx-auto">
+            Join ERAU-MUN and develop skills in diplomacy, public speaking, research, and global leadership. Open to all ERAU students.
+          </p>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link to="/register"
+              className="bg-[#b8963e] text-white font-semibold px-7 py-3 rounded hover:bg-[#d4af62] transition-colors text-sm">
+              Join Now
+            </Link>
+            <Link to="/contact"
+              className="border border-white/30 text-white font-semibold px-7 py-3 rounded hover:bg-white/10 transition-colors text-sm">
+              Contact Us
             </Link>
           </div>
         </div>

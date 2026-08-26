@@ -21,6 +21,7 @@ import ErnieCrisis from './pages/public/ErnieCrisis'
 import NotFound from './pages/public/NotFound'
 import InviteAccept from './pages/public/InviteAccept'
 import NewsPost from './pages/public/NewsPost'
+import Gallery from './pages/public/Gallery'
 
 // Legal pages
 import Privacy from './pages/public/Privacy'
@@ -48,6 +49,7 @@ import AdminEvents from './pages/admin/Events'
 import AdminEmails from './pages/admin/Emails'
 import AdminNews from './pages/admin/News'
 import AdminAwards from './pages/admin/Awards'
+import AdminGallery from './pages/admin/Gallery'
 
 // Event Admin pages
 import EventAdminLayout from './layouts/EventAdminLayout'
@@ -98,6 +100,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
           <Route path="/news/:slug" element={<NewsPost />} />
+          <Route path="/gallery" element={<Gallery />} />
         </Route>
 
         {/* ── Portal routes ── */}
@@ -144,6 +147,7 @@ function App() {
           <Route path="emails" element={<AdminEmails />} />
           <Route path="news" element={<AdminNews />} />
           <Route path="awards" element={<AdminAwards />} />
+          <Route path="gallery" element={<AdminGallery />} />
         </Route>
 
         {/* ── Event Admin routes ── */}
