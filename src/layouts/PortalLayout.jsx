@@ -1,5 +1,6 @@
 ﻿import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import NotificationCenter from '../components/NotificationCenter'
 
 const NAV = [
   { label: 'Dashboard', to: '/portal', icon: '⊞', end: true },
@@ -111,10 +112,7 @@ export default function PortalLayout() {
             <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e]">Member Portal</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Notifications placeholder */}
-            <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors relative">
-              &#128276;
-            </button>
+            <NotificationCenter />
           </div>
         </header>
 
