@@ -26,6 +26,8 @@ export default function Navbar() {
     { label: 'Contact', to: '/contact' },
   ]
 
+  const portalLink = user && isApproved ? '/portal' : user ? '/pending' : '/login'
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 h-[68px] bg-white border-b border-gray-200 transition-shadow duration-200 ${scrolled ? 'shadow-md' : 'shadow-sm'}`}>
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
@@ -43,8 +45,8 @@ export default function Navbar() {
                 to={link.to}
                 className={`px-3.5 py-2 rounded text-sm font-semibold transition-colors duration-150
                   ${location.pathname === link.to
-                    ? 'text-blue-900 bg-blue-50'
-                    : 'text-gray-800 hover:text-blue-900 hover:bg-blue-50'
+                    ? 'text-[#1e3a6e] bg-[#e8eef7]'
+                    : 'text-gray-800 hover:text-[#1e3a6e] hover:bg-[#e8eef7]'
                   }`}
               >
                 {link.label}
@@ -54,37 +56,13 @@ export default function Navbar() {
         </ul>
 
         {/* CTA */}
-        <div className="hidden md:flex items-center gap-3">
-          {user && isApproved ? (
-            <Link
-              to="/portal"
-              className="bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded hover:bg-blue-800 transition-colors"
-            >
-              My Portal
-            </Link>
-          ) : user ? (
-            <Link
-              to="/pending"
-              className="bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded hover:bg-blue-800 transition-colors"
-            >
-              My Account
-            </Link>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="text-sm font-semibold text-gray-800 hover:text-blue-900 transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/register"
-                className="bg-blue-900 text-white text-sm font-semibold px-5 py-2 rounded hover:bg-blue-800 transition-colors"
-              >
-                Portal
-              </Link>
-            </>
-          )}
+        <div className="hidden md:flex items-center">
+          <Link
+            to={portalLink}
+            className="bg-[#1e3a6e] text-white text-sm font-semibold px-5 py-2 rounded hover:bg-[#2d538f] transition-colors"
+          >
+            Portal
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -114,32 +92,20 @@ export default function Navbar() {
               to={link.to}
               className={`px-3 py-2 rounded text-sm font-semibold transition-colors
                 ${location.pathname === link.to
-                  ? 'text-blue-900 bg-blue-50'
-                  : 'text-gray-800 hover:text-blue-900 hover:bg-blue-50'
+                  ? 'text-[#1e3a6e] bg-[#e8eef7]'
+                  : 'text-gray-800 hover:text-[#1e3a6e] hover:bg-[#e8eef7]'
                 }`}
             >
               {link.label}
             </Link>
           ))}
-          <div className="border-t border-gray-100 pt-3 mt-1 flex flex-col gap-2">
-            {user && isApproved ? (
-              <Link to="/portal" className="bg-blue-900 text-white text-sm font-semibold px-4 py-2 rounded text-center">
-                My Portal
-              </Link>
-            ) : user ? (
-              <Link to="/pending" className="bg-blue-900 text-white text-sm font-semibold px-4 py-2 rounded text-center">
-                My Account
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="text-sm font-semibold text-gray-800 px-4 py-2 rounded hover:bg-gray-50 text-center">
-                  Sign in
-                </Link>
-                <Link to="/register" className="bg-blue-900 text-white text-sm font-semibold px-4 py-2 rounded text-center">
-                  Join Us
-                </Link>
-              </>
-            )}
+          <div className="border-t border-gray-100 pt-3 mt-1">
+            <Link
+              to={portalLink}
+              className="block bg-[#1e3a6e] text-white text-sm font-semibold px-4 py-2 rounded text-center hover:bg-[#2d538f] transition-colors"
+            >
+              Portal
+            </Link>
           </div>
         </div>
       )}
