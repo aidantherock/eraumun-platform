@@ -13,6 +13,7 @@ const NAV = [
   { label: 'Files', to: 'files' },
   { label: 'Delegates', to: 'delegates' },
   { label: 'Export', to: 'export' },
+  { label: 'Awards', to: 'awards' },
 ]
 
 export default function EventAdminLayout() {

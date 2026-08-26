@@ -45,6 +45,7 @@ import AdminForms from './pages/admin/Forms'
 import AdminEvents from './pages/admin/Events'
 import AdminEmails from './pages/admin/Emails'
 import AdminNews from './pages/admin/News'
+import AdminAwards from './pages/admin/Awards'
 
 // Event Admin pages
 import EventAdminLayout from './layouts/EventAdminLayout'
@@ -57,6 +58,7 @@ import EventAdminSchedule from './pages/admin/event/Schedule'
 import EventAdminFiles from './pages/admin/event/Files'
 import EventAdminGuestDelegates from './pages/admin/event/GuestDelegates'
 import EventAdminExport from './pages/admin/event/Export'
+import EventAdminAwards from './pages/admin/event/Awards'
 
 // Committee pages
 import CommitteeLayout from './layouts/CommitteeLayout'
@@ -137,6 +139,7 @@ function App() {
           <Route path="events" element={<AdminEvents />} />
           <Route path="emails" element={<AdminEmails />} />
           <Route path="news" element={<AdminNews />} />
+          <Route path="awards" element={<AdminAwards />} />
         </Route>
 
         {/* ── Event Admin routes ── */}
@@ -154,6 +157,7 @@ function App() {
           <Route path="files" element={<EventAdminFiles />} />
           <Route path="delegates" element={<EventAdminGuestDelegates />} />
           <Route path="export" element={<EventAdminExport />} />
+          <Route path="awards" element={<EventAdminAwards />} />
         </Route>
 
       </Routes>
