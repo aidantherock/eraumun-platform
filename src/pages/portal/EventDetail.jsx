@@ -119,7 +119,6 @@ export default function EventDetail() {
       .single()
 
     if (!template) return
-
     setChecklist(template)
 
     const { data: items } = await supabase
@@ -144,9 +143,7 @@ export default function EventDetail() {
     const isCompleted = completions.includes(itemId)
     if (isCompleted) {
       await supabase.from('checklist_completions')
-        .delete()
-        .eq('item_id', itemId)
-        .eq('user_id', profile.id)
+        .delete().eq('item_id', itemId).eq('user_id', profile.id)
       setCompletions(prev => prev.filter(id => id !== itemId))
     } else {
       await supabase.from('checklist_completions')
@@ -334,7 +331,6 @@ export default function EventDetail() {
 
             {/* Sidebar */}
             <div className="space-y-4">
-              {/* Quick info */}
               <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Info</h3>
                 <div className="space-y-3">
@@ -360,23 +356,33 @@ export default function EventDetail() {
                     <span className="text-xs font-bold text-[#1e3a6e]">{checklistProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
-                    <div
-                      className="bg-[#1e3a6e] h-2 rounded-full transition-all"
-                      style={{ width: `${checklistProgress}%` }}
-                    />
+                    <div className="bg-[#1e3a6e] h-2 rounded-full transition-all"
+                      style={{ width: `${checklistProgress}%` }} />
                   </div>
                   <p className="text-xs text-gray-500 mb-3">
                     {completedCount} of {checklistItems.length} items completed
                     {totalRequired > 0 && ` · ${completedRequired}/${totalRequired} required`}
                   </p>
-                  <Link
-                    to={`/portal/events/${eventId}/checklist`}
-                    className="block w-full text-center text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-2.5 rounded-lg hover:bg-[#2d538f] transition-colors"
-                  >
+                  <Link to={`/portal/events/${eventId}/checklist`}
+                    className="block w-full text-center text-xs font-semibold bg-[#1e3a6e] text-white px-4 py-2.5 rounded-lg hover:bg-[#2d538f] transition-colors">
                     View Checklist
                   </Link>
                 </div>
               )}
+
+              {/* Certificate */}
+              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-2">Participation Certificate</h3>
+                <p className="text-xs text-gray-500 mb-3">Download your certificate of participation for this event.</p>
+                
+                  <a href={`/.netlify/functions/generate-certificate?userId=${profile.id}&eventId=${eventId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center text-xs font-semibold border border-[#1e3a6e] text-[#1e3a6e] px-4 py-2.5 rounded-lg hover:bg-[#e8eef7] transition-colors"
+                >
+                  Download Certificate
+                </a>
+              </div>
 
               {/* My committees */}
               {userCommittees.length > 0 && (

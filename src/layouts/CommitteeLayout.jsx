@@ -53,6 +53,7 @@ export default function CommitteeLayout() {
   { label: 'Crisis Notes', to: 'notes' },
 ] : []),
     ...(isStaff ? [{ label: 'Voting', to: 'voting' }] : []),
+  { label: 'Awards', to: 'awards' },
   ]
 
   if (loading) {

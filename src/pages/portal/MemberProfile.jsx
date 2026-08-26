@@ -52,7 +52,7 @@ export default function MemberProfile() {
   async function fetchEventHistory() {
     const { data } = await supabase
       .from('user_event_roles')
-      .select('*, event_roles(*, events(name, start_date, end_date, location))')
+      .select('*, event_roles(event_id, *, events(name, start_date, end_date, location))')
       .eq('user_id', memberId)
       .eq('approved', true)
       .order('assigned_at', { ascending: false })
@@ -103,10 +103,8 @@ export default function MemberProfile() {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Back */}
-      <button
-        onClick={() => navigate('/portal/directory')}
-        className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1"
-      >
+      <button onClick={() => navigate('/portal/directory')}
+        className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1">
         &#8592; Back to Directory
       </button>
 
@@ -121,7 +119,7 @@ export default function MemberProfile() {
                 <span>{member.first_name?.charAt(0)}{member.last_name?.charAt(0)}</span>
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <h1 className="font-serif text-2xl font-bold text-white">
                 {member.first_name} {member.last_name}
                 {isOwnProfile && <span className="text-white/50 text-sm font-normal ml-2">(You)</span>}
@@ -150,7 +148,7 @@ export default function MemberProfile() {
           </div>
         </div>
 
-        {/* Bio & contact */}
+        {/* Bio & social */}
         {(member.bio || (member.show_contact_info && (member.twitter_url || member.linkedin_url || member.website_url))) && (
           <div className="px-8 py-6 border-b border-gray-100">
             {member.bio && (
@@ -160,21 +158,15 @@ export default function MemberProfile() {
               <div className="flex items-center gap-4 flex-wrap">
                 {member.twitter_url && (
                   <a href={member.twitter_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[#1e3a6e] font-medium hover:underline">
-                    Twitter/X
-                  </a>
+                    className="text-xs text-[#1e3a6e] font-medium hover:underline">Twitter/X</a>
                 )}
                 {member.linkedin_url && (
                   <a href={member.linkedin_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[#1e3a6e] font-medium hover:underline">
-                    LinkedIn
-                  </a>
+                    className="text-xs text-[#1e3a6e] font-medium hover:underline">LinkedIn</a>
                 )}
                 {member.website_url && (
                   <a href={member.website_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[#1e3a6e] font-medium hover:underline">
-                    Website
-                  </a>
+                    className="text-xs text-[#1e3a6e] font-medium hover:underline">Website</a>
                 )}
               </div>
             )}
@@ -195,17 +187,11 @@ export default function MemberProfile() {
                 <div>
                   <p className="text-sm font-semibold text-[#b8963e]">{award.award_type}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {award.events?.name && (
-                      <p className="text-xs text-gray-500">{award.events.name}</p>
-                    )}
-                    {award.committees?.name && (
-                      <p className="text-xs text-gray-400">— {award.committees.name}</p>
-                    )}
+                    {award.events?.name && <p className="text-xs text-gray-500">{award.events.name}</p>}
+                    {award.committees?.name && <p className="text-xs text-gray-400">— {award.committees.name}</p>}
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(award.awarded_at).toLocaleDateString('en-US', {
-                      month: 'long', day: 'numeric', year: 'numeric'
-                    })}
+                    {new Date(award.awarded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>
               </div>
@@ -228,9 +214,7 @@ export default function MemberProfile() {
                 </p>
                 {item.event_roles?.events?.start_date && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {new Date(item.event_roles.events.start_date + 'T00:00:00').toLocaleDateString('en-US', {
-                      month: 'long', day: 'numeric', year: 'numeric'
-                    })}
+                    {new Date(item.event_roles.events.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </p>
                 )}
                 {item.event_roles?.events?.location && (
@@ -267,6 +251,41 @@ export default function MemberProfile() {
                     {item.role?.replace('_', ' ')}
                   </span>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Participation certificates */}
+        {isOwnProfile && eventHistory.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm md:col-span-2">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">Participation Certificates</h2>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {eventHistory.map(item => (
+                item.event_roles?.events && (
+                  <div key={item.id} className="px-6 py-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {item.event_roles.events.name}
+                      </p>
+                      {item.event_roles.events.start_date && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {new Date(item.event_roles.events.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                    
+                      href={`/.netlify/functions/generate-certificate?userId=${memberId}&eventId=${item.event_roles.event_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#1e3a6e] font-semibold border border-[#1e3a6e] px-3 py-1.5 rounded hover:bg-[#e8eef7] transition-colors flex-shrink-0"
+                    >
+                      Download
+                    </a>
+                  </div>
+                )
               ))}
             </div>
           </div>
