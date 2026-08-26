@@ -1,5 +1,4 @@
-﻿export default function Placeholder() { return <div className='p-8 text-gray-500'>Announcements - coming soon</div> }
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
