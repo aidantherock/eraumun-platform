@@ -3,179 +3,314 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+function getFirstDayOfMonth(year, month) {
+  return new Date(year, month, 1).getDay()
+}
+
+function expandRecurringEvents(events) {
+  const expanded = []
+  for (const event of events) {
+    if (event.is_cancelled) continue
+    if (!event.is_recurring) { expanded.push(event); continue }
+    const start = new Date(event.start_date + 'T00:00:00')
+    const end = event.recurrence_end_date
+      ? new Date(event.recurrence_end_date + 'T00:00:00')
+      : new Date(start.getFullYear(), 11, 31)
+    const rule = event.recurrence_rule
+    let current = new Date(start)
+    while (current <= end) {
+      expanded.push({ ...event, start_date: current.toISOString().split('T')[0] })
+      if (rule === 'daily') current.setDate(current.getDate() + 1)
+      else if (rule === 'weekly') current.setDate(current.getDate() + 7)
+      else if (rule === 'biweekly') current.setDate(current.getDate() + 14)
+      else if (rule === 'monthly') current.setMonth(current.getMonth() + 1)
+      else break
+    }
+  }
+  return expanded
+}
+
 export default function PortalHome() {
-  const { profile, userRoles, isEboard } = useAuth()
-  const [announcements, setAnnouncements] = useState([])
+  const { profile, isEboard } = useAuth()
+  const today = new Date()
+  const [currentYear, setCurrentYear] = useState(today.getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [events, setEvents] = useState([])
+  const [announcements, setAnnouncements] = useState([])
   const [notifications, setNotifications] = useState([])
+  const [news, setNews] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchData()
+    fetchAll()
   }, [])
 
-  async function fetchData() {
-    const [{ data: ann }, { data: evs }, { data: notifs }] = await Promise.all([
-      supabase
-        .from('announcements')
-        .select('*')
-        .in('visibility', ['public', 'members'])
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .limit(5),
-      supabase
-        .from('events')
-        .select('*')
-        .in('status', ['active', 'live'])
-        .order('start_date')
-        .limit(4),
-      supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', profile?.id)
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(5),
+  async function fetchAll() {
+    await Promise.all([
+      fetchEvents(),
+      fetchAnnouncements(),
+      fetchNotifications(),
+      fetchNews(),
     ])
-    setAnnouncements(ann ?? [])
-    setEvents(evs ?? [])
-    setNotifications(notifs ?? [])
     setLoading(false)
   }
 
-  async function markRead(id) {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
-    setNotifications(prev => prev.filter(n => n.id !== id))
+  async function fetchEvents() {
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .eq('is_cancelled', false)
+      .not('status', 'eq', 'draft')
+      .order('start_date')
+    setEvents(expandRecurringEvents(data ?? []))
   }
 
-  const roleNames = userRoles.map(r => r.name).join(', ')
+  async function fetchAnnouncements() {
+    const { data } = await supabase
+      .from('announcements')
+      .select('*')
+      .in('visibility', ['public', 'members'])
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(5)
+    setAnnouncements(data ?? [])
+  }
+
+  async function fetchNotifications() {
+    if (!profile?.id) return
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', profile.id)
+      .eq('is_read', false)
+      .order('created_at', { ascending: false })
+      .limit(5)
+    setNotifications(data ?? [])
+  }
+
+  async function fetchNews() {
+    const { data } = await supabase
+      .from('news_posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(3)
+    setNews(data ?? [])
+  }
+
+  function prevMonth() {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
+    else setCurrentMonth(m => m - 1)
+  }
+
+  function nextMonth() {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
+    else setCurrentMonth(m => m + 1)
+  }
+
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
+  const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const calendarDays = []
+  for (let i = 0; i < firstDay; i++) calendarDays.push(null)
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d)
+
+  function getEventsForDay(day) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return events.filter(e => e.start_date === dateStr)
+  }
+
+  const upcomingEvents = events
+    .filter(e => new Date(e.start_date + 'T00:00:00') >= today)
+    .slice(0, 5)
 
   return (
     <div className="space-y-8">
-
       {/* Welcome */}
-      <div className="bg-gradient-to-br from-[#1e3a6e] to-[#162d58] rounded-xl px-8 py-6 text-white">
+      <div className="bg-gradient-to-br from-[#1e3a6e] to-[#2d538f] rounded-2xl px-8 py-6 text-white">
         <p className="text-xs font-bold uppercase tracking-widest text-[#d4af62] mb-1">Welcome back</p>
-        <h1 className="font-serif text-2xl font-bold mb-1">
+        <h1 className="font-serif text-2xl font-bold">
           {profile?.first_name} {profile?.last_name}
         </h1>
-        <p className="text-white/60 text-sm">{roleNames || 'Club Member'} &mdash; {profile?.school}</p>
+        <p className="text-white/60 text-sm mt-1">{profile?.school}</p>
+        {isEboard && (
+          <Link to="/admin"
+            className="inline-block mt-4 text-xs font-semibold bg-white/10 border border-white/20 text-white px-4 py-2 rounded hover:bg-white/20 transition-colors">
+            Admin Panel
+          </Link>
+        )}
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Unread Notifications', value: notifications.length },
-          { label: 'Active Events', value: events.length },
-          { label: 'Announcements', value: announcements.length },
-          { label: 'Role Level', value: userRoles.length > 0 ? Math.max(...userRoles.map(r => r.level)) : 0 },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white border border-gray-200 rounded-lg px-5 py-4 shadow-sm">
-            <p className="text-2xl font-bold text-[#1e3a6e] font-serif">{stat.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* Announcements */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Announcements</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {loading ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">Loading...</div>
-            ) : announcements.length > 0 ? announcements.map(ann => (
-              <div key={ann.id} className="px-6 py-4">
-                {ann.is_urgent && (
-                  <span className="text-xs font-bold uppercase tracking-widest text-red-500 mb-1 block">Urgent</span>
-                )}
-                <p className="text-sm font-semibold text-gray-900 mb-1">{ann.title}</p>
-                <p className="text-xs text-gray-500 leading-relaxed">{ann.content}</p>
-                <p className="text-xs text-gray-400 mt-2">
-                  {ann.published_at ? new Date(ann.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                </p>
+      {/* Unread notifications */}
+      {notifications.length > 0 && (
+        <div className="bg-[#fffbf0] border border-[#e8c96f] rounded-xl p-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#7c5e10] mb-3">
+            {notifications.length} Unread Notification{notifications.length !== 1 ? 's' : ''}
+          </p>
+          <div className="space-y-2">
+            {notifications.map(n => (
+              <div key={n.id} className="flex items-start gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#b8963e] flex-shrink-0 mt-1.5" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{n.title}</p>
+                  {n.body && <p className="text-xs text-gray-500">{n.body}</p>}
+                </div>
               </div>
-            )) : (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">No announcements yet.</div>
-            )}
+            ))}
           </div>
         </div>
+      )}
 
-        {/* Notifications */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Notifications</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {loading ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">Loading...</div>
-            ) : notifications.length > 0 ? notifications.map(notif => (
-              <div key={notif.id} className="px-6 py-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{notif.title}</p>
-                  {notif.body && <p className="text-xs text-gray-500 mt-0.5">{notif.body}</p>}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(notif.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </p>
-                </div>
-                <button
-                  onClick={() => markRead(notif.id)}
-                  className="text-xs text-[#1e3a6e] font-medium hover:underline flex-shrink-0"
-                >
-                  Dismiss
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Calendar */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Calendar</h2>
+              <div className="flex items-center gap-2">
+                <button onClick={prevMonth}
+                  className="w-7 h-7 border border-gray-200 rounded flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm">
+                  &#8249;
+                </button>
+                <span className="text-sm font-semibold text-gray-700 min-w-[130px] text-center">{monthName}</span>
+                <button onClick={nextMonth}
+                  className="w-7 h-7 border border-gray-200 rounded flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm">
+                  &#8250;
                 </button>
               </div>
-            )) : (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">No new notifications.</div>
-            )}
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-7 mb-1">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                  <div key={d} className="text-center text-xs font-bold text-gray-400 py-1">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {calendarDays.map((day, i) => {
+                  if (!day) return <div key={`e-${i}`} />
+                  const dayEvents = getEventsForDay(day)
+                  const date = new Date(currentYear, currentMonth, day)
+                  const isToday = date.toDateString() === today.toDateString()
+                  return (
+                    <div key={day} className={`min-h-[52px] p-1 rounded-lg ${isToday ? 'bg-[#e8eef7]' : ''}`}>
+                      <div className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-0.5
+                        ${isToday ? 'bg-[#1e3a6e] text-white' : 'text-gray-500'}`}>
+                        {day}
+                      </div>
+                      {dayEvents.slice(0, 2).map((ev, idx) => (
+                        <Link key={idx} to={`/portal/events/${ev.id}`}
+                          className="block text-[9px] font-medium px-1 py-0.5 rounded bg-[#1e3a6e] text-white truncate mb-0.5 hover:bg-[#2d538f] transition-colors">
+                          {ev.name}
+                        </Link>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <p className="text-[9px] text-gray-400 px-1">+{dayEvents.length - 2}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Upcoming events */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Upcoming Events</h2>
+              <Link to="/portal/events" className="text-xs text-[#1e3a6e] font-medium hover:underline">View all</Link>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {upcomingEvents.length > 0 ? upcomingEvents.map((ev, i) => (
+                <Link key={i} to={`/portal/events/${ev.id}`}
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-[#1e3a6e] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                    {new Date(ev.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{ev.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {ev.location ?? ev.event_location ?? ''}
+                      {ev.event_time && ` · ${ev.event_time}`}
+                    </p>
+                  </div>
+                </Link>
+              )) : (
+                <div className="px-5 py-6 text-center text-sm text-gray-400">No upcoming events.</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Events */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">Active Events</h2>
-          <Link to="/portal/events" className="text-xs text-[#1e3a6e] font-medium hover:underline">
-            View all
-          </Link>
-        </div>
-        <div className="p-6">
-          {loading ? (
-            <div className="text-center text-sm text-gray-400">Loading...</div>
-          ) : events.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {events.map(event => (
-                <Link
-                  key={event.id}
-                  to="/portal/events"
-                  className="border border-gray-200 rounded-lg p-4 hover:border-[#1e3a6e] hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-sm text-gray-900">{event.name}</h3>
-                    <span className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded
-                      ${event.status === 'live' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {event.status}
-                    </span>
-                  </div>
-                  {event.location && <p className="text-xs text-gray-500">{event.location}</p>}
-                  {event.start_date && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(event.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
+        {/* Right sidebar */}
+        <div className="space-y-4">
+          {/* Announcements */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-900">Announcements</h2>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {announcements.length > 0 ? announcements.map(ann => (
+                <div key={ann.id} className="px-5 py-3">
+                  {ann.is_urgent && (
+                    <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-0.5">Urgent</span>
                   )}
+                  <p className="text-sm font-semibold text-gray-900 leading-snug">{ann.title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{ann.content}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {ann.published_at ? new Date(ann.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
+                  </p>
+                </div>
+              )) : (
+                <div className="px-5 py-6 text-center text-sm text-gray-400">No announcements.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Latest news */}
+          {news.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="font-semibold text-gray-900">Latest News</h2>
+                <Link to="/news" className="text-xs text-[#1e3a6e] font-medium hover:underline">View all</Link>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {news.map(post => (
+                  <Link key={post.id} to={`/news/${post.slug}`}
+                    className="block px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e] mb-0.5">{post.category}</p>
+                    <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{post.title}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick links */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+            <h2 className="font-semibold text-gray-900 mb-3">Quick Links</h2>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: 'View Events', to: '/portal/events' },
+                { label: 'My Profile', to: '/portal/profile' },
+                { label: 'Contact Us', to: '/portal/contact' },
+              ].map(link => (
+                <Link key={link.to} to={link.to}
+                  className="text-sm text-[#1e3a6e] font-medium hover:underline">
+                  {link.label} →
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8 text-sm text-gray-400">No active events at this time.</div>
-          )}
+          </div>
         </div>
       </div>
-
     </div>
   )
 }
