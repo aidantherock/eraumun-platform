@@ -53,6 +53,8 @@ import EventAdminCommittees from './pages/admin/event/Committees'
 import EventAdminRoles from './pages/admin/event/Roles'
 import EventAdminSubmissions from './pages/admin/event/Submissions'
 import EventAdminAttendees from './pages/admin/event/Attendees'
+import EventAdminSchedule from './pages/admin/event/Schedule'
+import EventAdminFiles from './pages/admin/event/Files'
 
 // Committee pages
 import CommitteeLayout from './layouts/CommitteeLayout'
@@ -146,6 +148,8 @@ function App() {
           <Route path="roles" element={<EventAdminRoles />} />
           <Route path="submissions" element={<EventAdminSubmissions />} />
           <Route path="attendees" element={<EventAdminAttendees />} />
+          <Route path="schedule" element={<EventAdminSchedule />} />
+          <Route path="files" element={<EventAdminFiles />} />
         </Route>
 
       </Routes>
