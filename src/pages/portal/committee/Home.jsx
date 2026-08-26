@@ -1,34 +1,52 @@
-﻿import { useOutletContext } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { supabase } from '../../../lib/supabase'
+﻿import { useState, useEffect } from 'react'
+import { Link, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext'
+import { supabase } from '../../../lib/supabase'
+import { useRealtime } from '../../../hooks/useRealtime'
 
 export default function CommitteeHome() {
-  const { committee, userRole, isStaff } = useOutletContext()
+  const { committee, isStaff } = useOutletContext()
   const { profile } = useAuth()
-  const [floorState, setFloorState] = useState(null)
   const [announcements, setAnnouncements] = useState([])
-  const [delegates, setDelegates] = useState([])
-  const [staff, setStaff] = useState([])
-  const [checklist, setChecklist] = useState([])
-  const [completions, setCompletions] = useState([])
+  const [floorState, setFloorState] = useState(null)
+  const [recentInjects, setRecentInjects] = useState([])
+  const [stats, setStats] = useState({ submissions: 0, delegates: 0, motions: 0 })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (committee?.id) {
-      fetchFloorState()
-      fetchAnnouncements()
-      fetchMembers()
-      fetchChecklist()
-    }
+    if (committee?.id) fetchAll()
   }, [committee?.id])
 
-  async function fetchFloorState() {
-    const { data } = await supabase
-      .from('floor_state')
-      .select('*')
-      .eq('committee_id', committee.id)
-      .single()
-    setFloorState(data)
+  useRealtime({
+    channel: `committee-home-${committee?.id}`,
+    event: 'INSERT',
+    table: 'crisis_injects',
+    filter: `committee_id=eq.${committee?.id}`,
+    callback: (payload) => {
+      if (payload.new?.is_published) {
+        setRecentInjects(prev => [payload.new, ...prev].slice(0, 3))
+      }
+    },
+    deps: [committee?.id]
+  })
+
+  useRealtime({
+    channel: `floor-home-${committee?.id}`,
+    event: 'UPDATE',
+    table: 'floor_state',
+    filter: `committee_id=eq.${committee?.id}`,
+    callback: (payload) => setFloorState(payload.new),
+    deps: [committee?.id]
+  })
+
+  async function fetchAll() {
+    await Promise.all([
+      fetchAnnouncements(),
+      fetchFloorState(),
+      fetchStats(),
+      committee?.type === 'crisis' ? fetchRecentInjects() : Promise.resolve(),
+    ])
+    setLoading(false)
   }
 
   async function fetchAnnouncements() {
@@ -42,46 +60,33 @@ export default function CommitteeHome() {
     setAnnouncements(data ?? [])
   }
 
-  async function fetchMembers() {
+  async function fetchFloorState() {
     const { data } = await supabase
-      .from('committee_roles')
-      .select('*, profiles(first_name, last_name, avatar_url, school)')
+      .from('floor_state')
+      .select('*')
       .eq('committee_id', committee.id)
-    const allMembers = data ?? []
-    setDelegates(allMembers.filter(m => ['delegate', 'head_delegate'].includes(m.role)))
-    setStaff(allMembers.filter(m => ['chair', 'staff'].includes(m.role)))
+      .single()
+    setFloorState(data)
   }
 
-  async function fetchChecklist() {
-    const { data: templates } = await supabase
-      .from('checklist_templates')
-      .select('*, checklist_items(*)')
-      .eq('committee_id', committee.id)
-      .limit(1)
-
-    if (templates?.[0]) {
-      setChecklist(templates[0].checklist_items ?? [])
-      const { data: comps } = await supabase
-        .from('checklist_completions')
-        .select('item_id')
-        .eq('user_id', profile.id)
-      setCompletions(comps?.map(c => c.item_id) ?? [])
-    }
+  async function fetchStats() {
+    const [{ count: submissions }, { count: delegates }, { count: motions }] = await Promise.all([
+      supabase.from('submissions').select('*', { count: 'exact', head: true }).eq('committee_id', committee.id),
+      supabase.from('committee_roles').select('*', { count: 'exact', head: true }).eq('committee_id', committee.id),
+      supabase.from('motions').select('*', { count: 'exact', head: true }).eq('committee_id', committee.id).eq('status', 'pending'),
+    ])
+    setStats({ submissions, delegates, motions })
   }
 
-  async function toggleChecklist(itemId) {
-    const isDone = completions.includes(itemId)
-    if (isDone) {
-      await supabase.from('checklist_completions')
-        .delete()
-        .eq('item_id', itemId)
-        .eq('user_id', profile.id)
-      setCompletions(prev => prev.filter(id => id !== itemId))
-    } else {
-      await supabase.from('checklist_completions')
-        .insert({ item_id: itemId, user_id: profile.id })
-      setCompletions(prev => [...prev, itemId])
-    }
+  async function fetchRecentInjects() {
+    const { data } = await supabase
+      .from('crisis_injects')
+      .select('*')
+      .eq('committee_id', committee.id)
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(3)
+    setRecentInjects(data ?? [])
   }
 
   const MODE_COLORS = {
@@ -89,139 +94,134 @@ export default function CommitteeHome() {
     moderated_caucus: 'bg-blue-100 text-blue-700',
     unmoderated_caucus: 'bg-yellow-100 text-yellow-700',
     voting: 'bg-red-100 text-red-700',
-    closed: 'bg-gray-100 text-gray-700',
+    closed: 'bg-gray-100 text-gray-600',
+  }
+
+  const INJECT_COLORS = {
+    general: 'border-[#1e3a6e]',
+    urgent: 'border-red-500',
+    development: 'border-yellow-500',
+    resolution: 'border-green-500',
   }
 
   return (
     <div className="space-y-6">
-
       <div>
         <h1 className="font-serif text-2xl font-bold text-gray-900">{committee?.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">{committee?.topic ?? 'No topic set yet.'}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {committee?.type === 'crisis' ? 'Crisis Committee' : 'General Assembly'}
+          {committee?.topic && ` — ${committee.topic}`}
+        </p>
       </div>
 
       {/* Floor status */}
       {floorState && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Floor Status</p>
-            <span className={`text-sm font-semibold px-3 py-1 rounded-full ${MODE_COLORS[floorState.mode] ?? 'bg-gray-100 text-gray-700'}`}>
-              {floorState.mode.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </span>
-            {floorState.caucus_topic && (
-              <p className="text-xs text-gray-500 mt-2">Topic: {floorState.caucus_topic}</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Floor Status</p>
+              <span className={`text-sm font-semibold px-3 py-1.5 rounded-full ${MODE_COLORS[floorState.mode] ?? 'bg-gray-100 text-gray-600'}`}>
+                {floorState.mode?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </span>
+            </div>
+            {floorState.speaking_time_seconds && (
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Speaking Time</p>
+                <p className="text-lg font-bold text-[#1e3a6e]">{floorState.speaking_time_seconds}s</p>
+              </div>
             )}
           </div>
-          {floorState.speaking_time_seconds && (
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Speaking Time</p>
-              <p className="text-lg font-bold text-[#1e3a6e]">{floorState.speaking_time_seconds}s</p>
-            </div>
-          )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Delegates', value: stats.delegates },
+          { label: 'Submissions', value: stats.submissions },
+          { label: 'Pending Motions', value: stats.motions, urgent: stats.motions > 0 && isStaff },
+        ].map(stat => (
+          <div key={stat.label} className={`border rounded-xl px-5 py-4 shadow-sm
+            ${stat.urgent ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-gray-200'}`}>
+            <p className={`text-2xl font-bold font-serif ${stat.urgent ? 'text-yellow-700' : 'text-[#1e3a6e]'}`}>
+              {loading ? '—' : stat.value}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Announcements */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Committee Announcements</h2>
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">Announcements</h2>
           </div>
           <div className="divide-y divide-gray-100">
             {announcements.length > 0 ? announcements.map(ann => (
-              <div key={ann.id} className="px-6 py-4">
+              <div key={ann.id} className="px-5 py-3">
                 {ann.is_urgent && (
-                  <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-1">Urgent</span>
+                  <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-0.5">Urgent</span>
                 )}
                 <p className="text-sm font-semibold text-gray-900">{ann.title}</p>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{ann.content}</p>
+                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{ann.content}</p>
               </div>
             )) : (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">No announcements yet.</div>
+              <div className="px-5 py-6 text-center text-sm text-gray-400">No announcements.</div>
             )}
           </div>
         </div>
 
-        {/* Pre-conference checklist */}
-        {checklist.length > 0 && (
+        {/* Crisis feed preview */}
+        {committee?.type === 'crisis' && (
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Pre-Conference Checklist</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{completions.length} of {checklist.length} complete</p>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Latest Crisis Updates</h2>
+              <Link to="crisis" className="text-xs text-[#1e3a6e] font-medium hover:underline">
+                View all
+              </Link>
             </div>
             <div className="divide-y divide-gray-100">
-              {checklist.map(item => (
-                <label key={item.id} className="flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="checkbox"
-                    checked={completions.includes(item.id)}
-                    onChange={() => toggleChecklist(item.id)}
-                    className="accent-[#1e3a6e]"
-                  />
-                  <span className={`text-sm ${completions.includes(item.id) ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                    {item.label}
-                  </span>
-                </label>
-              ))}
+              {recentInjects.length > 0 ? recentInjects.map(inject => (
+                <div key={inject.id} className={`px-5 py-3 border-l-4 ${INJECT_COLORS[inject.inject_type] ?? INJECT_COLORS.general}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-semibold text-gray-900">{inject.title}</p>
+                    <span className="text-xs font-bold text-red-500 uppercase">
+                      {inject.inject_type === 'urgent' ? '⚡ Urgent' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{inject.content}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {inject.published_at ? new Date(inject.published_at).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : ''}
+                  </p>
+                </div>
+              )) : (
+                <div className="px-5 py-6 text-center text-sm text-gray-400">No crisis updates yet.</div>
+              )}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Delegate list */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Delegates ({delegates.length})</h2>
-        </div>
-        <div className="p-6">
-          {delegates.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {delegates.map(d => (
-                <div key={d.id} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
-                  <div className="w-8 h-8 rounded-full bg-[#e8eef7] border border-[#b8963e] flex items-center justify-center text-xs font-bold text-[#1e3a6e] flex-shrink-0">
-                    {d.profiles?.first_name?.charAt(0)}{d.profiles?.last_name?.charAt(0)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-900 truncate">
-                      {d.profiles?.first_name} {d.profiles?.last_name}
-                    </p>
-                    {d.assignment && <p className="text-xs text-gray-400 truncate">{d.assignment}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-4">No delegates assigned yet.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Staff list */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Committee Staff ({staff.length})</h2>
-        </div>
-        <div className="p-6">
-          {staff.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {staff.map(s => (
-                <div key={s.id} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white">
-                  <div className="w-7 h-7 rounded-full bg-[#1e3a6e] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {s.profiles?.first_name?.charAt(0)}{s.profiles?.last_name?.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-900">
-                      {s.profiles?.first_name} {s.profiles?.last_name}
-                    </p>
-                    <p className="text-xs text-[#b8963e] font-bold uppercase tracking-wide">{s.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-4">No staff assigned yet.</p>
-          )}
+        {/* Quick links */}
+        <div className={`bg-white border border-gray-200 rounded-xl p-5 shadow-sm ${committee?.type === 'crisis' ? 'md:col-span-2' : ''}`}>
+          <h2 className="font-semibold text-gray-900 mb-4">Quick Access</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Submissions', to: 'submissions' },
+              { label: 'Resolutions', to: 'resolutions' },
+              { label: 'Floor', to: 'floor' },
+              { label: 'Messages', to: 'messages' },
+              ...(committee?.type === 'crisis' ? [{ label: 'Crisis Feed', to: 'crisis' }] : []),
+              ...(isStaff ? [{ label: 'Voting', to: 'voting' }] : []),
+            ].map(link => (
+              <Link key={link.to} to={link.to}
+                className="text-sm font-semibold text-center border border-gray-200 text-gray-600 px-4 py-3 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors">
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -72,6 +72,7 @@ import CommitteeVoting from './pages/portal/committee/Voting'
 import CommitteeMessages from './pages/portal/committee/Messages'
 import CommitteeResolutions from './pages/portal/committee/Resolutions'
 import CommitteeFloor from './pages/portal/committee/Floor'
+import CommitteeCrisis from './pages/portal/committee/Crisis'
 
 function App() {
   return (
@@ -130,6 +131,7 @@ function App() {
           <Route path="messages" element={<CommitteeMessages />} />
           <Route path="resolutions" element={<CommitteeResolutions />} />
           <Route path="floor" element={<CommitteeFloor />} />
+          <Route path="crisis" element={<CommitteeCrisis />} />
         </Route>
 
         {/* ── Global Admin routes ── */}

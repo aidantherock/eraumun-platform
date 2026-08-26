@@ -48,6 +48,7 @@ export default function CommitteeLayout() {
     { label: 'Resolutions', to: `${base}/resolutions` },
     { label: 'Voting', to: `${base}/voting` },
     { label: 'Messages', to: `${base}/messages` },
+    { label: 'Crisis Feed', to: 'crisis' },
     ...(isStaff ? [{ label: 'Floor', to: `${base}/floor` }] : []),
   ]
 
