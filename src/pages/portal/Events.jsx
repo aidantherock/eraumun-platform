@@ -28,7 +28,7 @@ function expandRecurringEvents(events) {
 }
 
 export default function PortalEvents() {
-  const { profile, isEboard, isStaffOrAbove } = useAuth()
+  const { profile, isStaffOrAbove } = useAuth()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [signedUp, setSignedUp] = useState([])
@@ -50,6 +50,7 @@ export default function PortalEvents() {
   }
 
   async function fetchSignups() {
+    if (!profile?.id) return
     const { data } = await supabase
       .from('user_event_roles')
       .select('*, event_roles(event_id)')
@@ -130,7 +131,7 @@ export default function PortalEvents() {
                     <p className="text-xs text-gray-400 mb-2">{event.event_location}</p>
                   )}
                   {event.description && (
-                    <p className="text-sm text-gray-500 leading-relaxed mb-4">{event.description}</p>
+                    <p className="text-sm text-gray-500 leading-relaxed mb-4 line-clamp-2">{event.description}</p>
                   )}
 
                   {isAway && (
@@ -179,6 +180,12 @@ export default function PortalEvents() {
                         </button>
                       )
                     )}
+                    <Link
+                      to={`/portal/events/${event.id}`}
+                      className="text-xs font-semibold border border-gray-200 text-gray-600 px-4 py-1.5 rounded-lg hover:border-[#1e3a6e] hover:text-[#1e3a6e] transition-colors"
+                    >
+                      View Details
+                    </Link>
                     {isStaffOrAbove && !event._isOccurrence && (
                       <Link
                         to={`/admin/event/${event.id}`}
