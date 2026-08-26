@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import PublicLayout from './layouts/PublicLayout'
 
 // Auth pages
 import Login from './pages/public/Login'
@@ -9,36 +10,132 @@ import ResetPassword from './pages/public/ResetPassword'
 import UpdatePassword from './pages/public/UpdatePassword'
 import Pending from './pages/public/Pending'
 
+// Public pages
+import Home from './pages/public/Home'
+import About from './pages/public/About'
+import Conferences from './pages/public/Conferences'
+import Support from './pages/public/Support'
+import News from './pages/public/News'
+import Contact from './pages/public/Contact'
+import ErnieCrisis from './pages/public/ErnieCrisis'
+import NotFound from './pages/public/NotFound'
+
+// Legal pages
+import Privacy from './pages/public/Privacy'
+import Terms from './pages/public/Terms'
+import Cookies from './pages/public/Cookies'
+
+// Portal pages
+import PortalLayout from './layouts/PortalLayout'
+import PortalHome from './pages/portal/Home'
+import PortalEvents from './pages/portal/Events'
+import PortalContact from './pages/portal/Contact'
+import PortalProfile from './pages/portal/Profile'
+
+// Admin pages
+import AdminLayout from './layouts/AdminLayout'
+import AdminHome from './pages/admin/Home'
+import AdminUsers from './pages/admin/Users'
+import AdminAnnouncements from './pages/admin/Announcements'
+import AdminSponsors from './pages/admin/Sponsors'
+import AdminForms from './pages/admin/Forms'
+import AdminEvents from './pages/admin/Events'
+
+// Event Admin pages
+import EventAdminLayout from './layouts/EventAdminLayout'
+import EventAdminHome from './pages/admin/event/Home'
+import EventAdminCommittees from './pages/admin/event/Committees'
+import EventAdminRoles from './pages/admin/event/Roles'
+import EventAdminSubmissions from './pages/admin/event/Submissions'
+
+// Committee pages
+import CommitteeLayout from './layouts/CommitteeLayout'
+import CommitteeHome from './pages/portal/committee/Home'
+import CommitteeSubmissions from './pages/portal/committee/Submissions'
+import CommitteeVoting from './pages/portal/committee/Voting'
+import CommitteeMessages from './pages/portal/committee/Messages'
+import CommitteeResolutions from './pages/portal/committee/Resolutions'
+import CommitteeFloor from './pages/portal/committee/Floor'
+
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public auth routes */}
+
+        {/* ── Auth routes (no layout) ── */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/update-password" element={<UpdatePassword />} />
         <Route path="/pending" element={<Pending />} />
 
-        {/* Portal routes (protected) */}
+        {/* ── Public site routes ── */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/conferences" element={<Conferences />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/ernie-crisis" element={<ErnieCrisis />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {/* ── Portal routes ── */}
         <Route path="/portal" element={
           <ProtectedRoute>
-            <div>Portal Home — coming soon</div>
+            <PortalLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<PortalHome />} />
+          <Route path="events" element={<PortalEvents />} />
+          <Route path="contact" element={<PortalContact />} />
+          <Route path="profile" element={<PortalProfile />} />
+        </Route>
 
-        {/* Admin routes (eboard+ only) */}
+        {/* ── Committee workspace routes ── */}
+        <Route path="/portal/committee/:committeeId" element={
+          <ProtectedRoute>
+            <CommitteeLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<CommitteeHome />} />
+          <Route path="submissions" element={<CommitteeSubmissions />} />
+          <Route path="voting" element={<CommitteeVoting />} />
+          <Route path="messages" element={<CommitteeMessages />} />
+          <Route path="resolutions" element={<CommitteeResolutions />} />
+          <Route path="floor" element={<CommitteeFloor />} />
+        </Route>
+
+        {/* ── Global Admin routes ── */}
         <Route path="/admin" element={
           <ProtectedRoute requireLevel={80}>
-            <div>Admin Panel — coming soon</div>
+            <AdminLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<AdminHome />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
+          <Route path="sponsors" element={<AdminSponsors />} />
+          <Route path="forms" element={<AdminForms />} />
+          <Route path="events" element={<AdminEvents />} />
+        </Route>
 
-        {/* Public site */}
-        <Route path="/" element={<div>Public Site — coming soon</div>} />
+        {/* ── Event Admin routes ── */}
+        <Route path="/admin/event/:eventId" element={
+          <ProtectedRoute requireLevel={70}>
+            <EventAdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<EventAdminHome />} />
+          <Route path="committees" element={<EventAdminCommittees />} />
+          <Route path="roles" element={<EventAdminRoles />} />
+          <Route path="submissions" element={<EventAdminSubmissions />} />
+        </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   )
