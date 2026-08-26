@@ -43,11 +43,15 @@ export default function CommitteeLayout() {
 
   const NAV = [
     { label: 'Overview', to: '', end: true },
+    { label: 'Resources', to: 'resources' },
     { label: 'Submissions', to: 'submissions' },
     { label: 'Resolutions', to: 'resolutions' },
     { label: 'Floor', to: 'floor' },
     { label: 'Messages', to: 'messages' },
-    ...(isCrisis ? [{ label: 'Crisis Feed', to: 'crisis' }] : []),
+    ...(isCrisis ? [
+  { label: 'Crisis Feed', to: 'crisis' },
+  { label: 'Crisis Notes', to: 'notes' },
+] : []),
     ...(isStaff ? [{ label: 'Voting', to: 'voting' }] : []),
   ]
 

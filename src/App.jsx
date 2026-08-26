@@ -75,6 +75,8 @@ import CommitteeResolutions from './pages/portal/committee/Resolutions'
 import CommitteeFloor from './pages/portal/committee/Floor'
 import CommitteeCrisis from './pages/portal/committee/Crisis'
 import ConferenceMode from './pages/portal/committee/ConferenceMode'
+import CrisisNotes from './pages/portal/committee/CrisisNotes'
+import CommitteeResources from './pages/portal/committee/Resources'
 
 
 function App() {
@@ -137,6 +139,7 @@ function App() {
           <Route path="floor" element={<CommitteeFloor />} />
           <Route path="crisis" element={<CommitteeCrisis />} />
           <Route path="committee/:committeeId/conference" element={<ConferenceMode />} />
+          <Route path="notes" element={<CrisisNotes />} />
         </Route>
 
         {/* ── Global Admin routes ── */}
@@ -173,6 +176,7 @@ function App() {
           <Route path="delegates" element={<EventAdminGuestDelegates />} />
           <Route path="export" element={<EventAdminExport />} />
           <Route path="awards" element={<EventAdminAwards />} />
+          <Route path="resources" element={<CommitteeResources />} />
         </Route>
 
       </Routes>
