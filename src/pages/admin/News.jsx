@@ -15,6 +15,17 @@ const EMPTY_FORM = {
   published_at: '',
 }
 
+const STATUS_COLORS = {
+  draft: 'bg-gray-100 text-gray-600',
+  published: 'bg-green-100 text-green-700',
+  archived: 'bg-red-100 text-red-500',
+}
+
+const VISIBILITY_COLORS = {
+  public: 'bg-blue-100 text-blue-700',
+  members: 'bg-purple-100 text-purple-700',
+}
+
 export default function AdminNews() {
   const { profile } = useAuth()
   const [posts, setPosts] = useState([])
@@ -69,7 +80,9 @@ export default function AdminNews() {
       slug: editing?.slug ?? generateSlug(form.title),
       created_by: profile.id,
       organization_id: profile.organization_id,
-      published_at: form.status === 'published' ? (form.published_at || new Date().toISOString()) : null,
+      published_at: form.status === 'published'
+        ? (form.published_at || new Date().toISOString())
+        : null,
       cover_image_url: form.cover_image_url || null,
     }
 
@@ -122,17 +135,6 @@ export default function AdminNews() {
 
   const filtered = filter === 'all' ? posts : posts.filter(p => p.status === filter)
 
-  const STATUS_COLORS = {
-    draft: 'bg-gray-100 text-gray-600',
-    published: 'bg-green-100 text-green-700',
-    archived: 'bg-red-100 text-red-500',
-  }
-
-  const VISIBILITY_COLORS = {
-    public: 'bg-blue-100 text-blue-700',
-    members: 'bg-purple-100 text-purple-700',
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -148,14 +150,18 @@ export default function AdminNews() {
         </button>
       </div>
 
-      {/* Form */}
+      {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
               <h2 className="font-semibold text-gray-900">{editing ? 'Edit Post' : 'New Post'}</h2>
-              <button onClick={() => { setShowForm(false); setEditing(null); setForm(EMPTY_FORM) }}
-                className="text-gray-400 hover:text-gray-600 text-lg">&#x2715;</button>
+              <button
+                onClick={() => { setShowForm(false); setEditing(null); setForm(EMPTY_FORM) }}
+                className="text-gray-400 hover:text-gray-600 text-lg"
+              >
+                &#x2715;
+              </button>
             </div>
             <div className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -174,8 +180,8 @@ export default function AdminNews() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                  <textarea name="content" required value={form.content} onChange={handleChange} rows={10}
-                    placeholder="Full post content..."
+                  <textarea name="content" required value={form.content} onChange={handleChange} rows={12}
+                    placeholder="Full post content. Use blank lines to separate paragraphs."
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none font-mono" />
                 </div>
 
@@ -191,8 +197,8 @@ export default function AdminNews() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
                     <select name="visibility" value={form.visibility} onChange={handleChange}
                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
-                      <option value="public">Public (visible on public site)</option>
-                      <option value="members">Members Only (portal only)</option>
+                      <option value="public">Public</option>
+                      <option value="members">Members Only</option>
                     </select>
                   </div>
                 </div>
@@ -220,7 +226,15 @@ export default function AdminNews() {
                     className="text-sm text-gray-600" />
                   {uploading && <p className="text-xs text-gray-400 mt-1">Uploading...</p>}
                   {form.cover_image_url && (
-                    <img src={form.cover_image_url} alt="Cover" className="mt-2 h-24 w-auto rounded object-cover" />
+                    <div className="mt-2 flex items-center gap-3">
+                      <img src={form.cover_image_url} alt="Cover preview"
+                        className="h-20 w-32 object-cover rounded-lg" />
+                      <button type="button"
+                        onClick={() => setForm(prev => ({ ...prev, cover_image_url: '' }))}
+                        className="text-xs text-red-500 hover:underline">
+                        Remove
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -229,7 +243,8 @@ export default function AdminNews() {
                     className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
                     {submitting ? 'Saving...' : editing ? 'Save Changes' : 'Create Post'}
                   </button>
-                  <button type="button" onClick={() => { setShowForm(false); setEditing(null); setForm(EMPTY_FORM) }}
+                  <button type="button"
+                    onClick={() => { setShowForm(false); setEditing(null); setForm(EMPTY_FORM) }}
                     className="border border-gray-200 text-gray-600 font-semibold text-sm px-6 py-2.5 rounded hover:border-gray-400 transition-colors">
                     Cancel
                   </button>
@@ -251,6 +266,21 @@ export default function AdminNews() {
         ))}
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { label: 'Total', value: posts.length },
+          { label: 'Published', value: posts.filter(p => p.status === 'published').length },
+          { label: 'Drafts', value: posts.filter(p => p.status === 'draft').length },
+          { label: 'Members Only', value: posts.filter(p => p.visibility === 'members').length },
+        ].map(stat => (
+          <div key={stat.label} className="bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm">
+            <p className="text-2xl font-bold font-serif text-[#1e3a6e]">{stat.value}</p>
+            <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Posts list */}
       <div className="flex flex-col gap-4">
         {loading ? (
@@ -264,23 +294,25 @@ export default function AdminNews() {
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_COLORS[post.status]}`}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLORS[post.status]}`}>
                         {post.status}
                       </span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${VISIBILITY_COLORS[post.visibility]}`}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${VISIBILITY_COLORS[post.visibility]}`}>
                         {post.visibility}
                       </span>
                       {post.category && (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 flex-shrink-0">
                           {post.category}
                         </span>
                       )}
                     </div>
-                    {post.excerpt && <p className="text-xs text-gray-500 line-clamp-1">{post.excerpt}</p>}
-                    <p className="text-xs text-gray-400 mt-1">
+                    {post.excerpt && (
+                      <p className="text-xs text-gray-500 line-clamp-1 mb-1">{post.excerpt}</p>
+                    )}
+                    <p className="text-xs text-gray-400">
                       By {post.profiles?.first_name} {post.profiles?.last_name}
                       {post.published_at && ` · ${new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                     </p>
@@ -313,7 +345,9 @@ export default function AdminNews() {
           </div>
         )) : (
           <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
-            <p className="text-sm text-gray-400">No posts yet. Create one to get started.</p>
+            <p className="text-sm text-gray-400">
+              {filter === 'all' ? 'No posts yet. Create one to get started.' : `No ${filter} posts.`}
+            </p>
           </div>
         )}
       </div>

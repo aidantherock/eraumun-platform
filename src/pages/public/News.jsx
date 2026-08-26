@@ -1,5 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 
 const TYPE_COLORS = {
   gbm: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#b8963e]' },
@@ -20,27 +22,15 @@ function getFirstDayOfMonth(year, month) {
 
 function expandRecurringEvents(events) {
   const expanded = []
-
   for (const event of events) {
     if (event.is_cancelled) continue
-
-    if (!event.is_recurring) {
-      expanded.push(event)
-      continue
-    }
-
+    if (!event.is_recurring) { expanded.push(event); continue }
     const start = new Date(event.start_date)
     const end = event.recurrence_end_date ? new Date(event.recurrence_end_date) : new Date(start.getFullYear(), 11, 31)
     const rule = event.recurrence_rule
-
     let current = new Date(start)
     while (current <= end) {
-      expanded.push({
-        ...event,
-        start_date: current.toISOString().split('T')[0],
-        _isOccurrence: true,
-      })
-
+      expanded.push({ ...event, start_date: current.toISOString().split('T')[0] })
       if (rule === 'daily') current.setDate(current.getDate() + 1)
       else if (rule === 'weekly') current.setDate(current.getDate() + 7)
       else if (rule === 'biweekly') current.setDate(current.getDate() + 14)
@@ -48,12 +38,12 @@ function expandRecurringEvents(events) {
       else break
     }
   }
-
   return expanded
 }
 
 export default function News() {
   const today = new Date()
+  const { user, isApproved } = useAuth()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [events, setEvents] = useState([])
@@ -78,7 +68,6 @@ export default function News() {
     const { data } = await supabase
       .from('news_posts')
       .select('*')
-      .eq('visibility', 'public')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
     setNews(data ?? [])
@@ -112,6 +101,10 @@ export default function News() {
     .filter(e => new Date(e.start_date) >= today)
     .slice(0, 10)
 
+  const publicNews = news.filter(p => p.visibility === 'public')
+  const membersNews = news.filter(p => p.visibility === 'members')
+  const visibleNews = user && isApproved ? news : publicNews
+
   return (
     <div>
       {/* Hero */}
@@ -137,7 +130,6 @@ export default function News() {
             </h2>
           </div>
 
-          {/* Controls */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <button onClick={prevMonth}
@@ -152,7 +144,6 @@ export default function News() {
             </div>
           </div>
 
-          {/* Grid */}
           <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
             <div className="grid grid-cols-7">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
@@ -165,7 +156,6 @@ export default function News() {
                 const dayEvents = getEventsForDay(day)
                 const date = new Date(currentYear, currentMonth, day)
                 const isToday = date.toDateString() === today.toDateString()
-
                 return (
                   <div key={day}
                     className={`min-h-[90px] p-1.5 border-r border-b border-gray-200 ${isToday ? 'bg-[#fffbf0]' : 'bg-white'} ${(i + 1) % 7 === 0 ? 'border-r-0' : ''}`}>
@@ -187,7 +177,6 @@ export default function News() {
             </div>
           </div>
 
-          {/* Upcoming list */}
           <div className="mt-10">
             <h3 className="font-serif text-xl font-bold text-gray-900 mb-4">
               Upcoming <em className="italic text-[#1e3a6e]">Events</em>
@@ -225,26 +214,66 @@ export default function News() {
               News <em className="italic text-[#1e3a6e]">&amp; Announcements</em>
             </h2>
           </div>
+
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[1, 2, 3].map(i => <div key={i} className="bg-gray-200 rounded-lg h-64 animate-pulse" />)}
             </div>
-          ) : news.length > 0 ? (
+          ) : visibleNews.length > 0 || membersNews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {news.map(post => (
-                <div key={post.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                  <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center">
-                    <span className="font-serif text-3xl text-white/13 italic">MUN</span>
-                  </div>
+              {/* Public posts — always show */}
+              {visibleNews.map(post => (
+                <Link
+                  key={post.id}
+                  to={`/news/${post.slug}`}
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all block"
+                >
+                  {post.cover_image_url ? (
+                    <img src={post.cover_image_url} alt={post.title} className="h-32 w-full object-cover" />
+                  ) : (
+                    <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center">
+                      <span className="font-serif text-3xl text-white/20 italic">MUN</span>
+                    </div>
+                  )}
                   <div className="p-5">
                     <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e] mb-2">{post.category ?? 'News'}</p>
                     <h4 className="font-semibold text-sm text-gray-900 mb-2 leading-snug">{post.title}</h4>
-                    <p className="text-xs text-gray-500 leading-relaxed mb-3">{post.excerpt}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">{post.excerpt}</p>
                     <p className="text-xs text-gray-400">
                       {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
                     </p>
                   </div>
-                </div>
+                </Link>
+              ))}
+
+              {/* Members-only posts — locked if not logged in */}
+              {!isApproved && membersNews.map(post => (
+                <Link
+                  key={post.id}
+                  to="/login"
+                  className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all block relative"
+                >
+                  {post.cover_image_url ? (
+                    <img src={post.cover_image_url} alt={post.title} className="h-32 w-full object-cover opacity-40" />
+                  ) : (
+                    <div className="h-32 bg-gradient-to-br from-[#1e3a6e] to-[#162d58] flex items-center justify-center opacity-40">
+                      <span className="font-serif text-3xl text-white/20 italic">MUN</span>
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e]">{post.category ?? 'News'}</p>
+                      <span className="text-xs font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded-full">Members Only</span>
+                    </div>
+                    <h4 className="font-semibold text-sm text-gray-900 mb-2 leading-snug">{post.title}</h4>
+                    <div className="relative">
+                      <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2 blur-sm select-none">{post.excerpt}</p>
+                    </div>
+                    <div className="bg-[#e8eef7] border border-[#1e3a6e]/20 rounded-lg px-3 py-2 text-center">
+                      <p className="text-xs text-[#1e3a6e] font-semibold">Sign in to read this post</p>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
           ) : (
