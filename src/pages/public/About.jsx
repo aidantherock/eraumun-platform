@@ -135,14 +135,14 @@ export default function About() {
             </div>
 
             {/* Back */}
-            <div
-              className="absolute inset-0 bg-[#1e3a6e] rounded-xl shadow-md flex flex-col justify-center p-6 text-left"
-              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-            >
-              <p className="font-serif text-xl font-bold text-white mb-1">{member.name}</p>
-              <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-4">{member.title}</p>
-              <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
-            </div>
+<div
+  className="absolute inset-0 bg-[#1e3a6e] border border-[#b8963e]/30 rounded-xl shadow-sm flex flex-col items-center justify-center p-5 text-center"
+  style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+>
+  <p className="font-serif text-lg font-bold text-white mb-1">{member.name}</p>
+  <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-3">{member.title}</p>
+  <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
+</div>
           </div>
         </div>
       ))}
