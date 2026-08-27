@@ -371,7 +371,7 @@ export default function Home() {
             className="group flex flex-col items-center gap-3"
           >
             {sponsor.logo_url ? (
-              <img src={sponsor.logo_url} alt={sponsor.name} className="h-16 w-auto max-w-[160px] object-contain bg-gray-50 rounded-lg p-2" />
+              <img src={sponsor.logo_url} alt={sponsor.name} className="h-32 w-auto max-w-[160px] object-contain bg-gray-50 rounded-lg p-2" />
             ) : (
               <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-500">
                 {sponsor.initials}
