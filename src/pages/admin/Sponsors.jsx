@@ -12,6 +12,20 @@ const CHECKLIST_ITEMS = [
   'Certificate of appreciation',
 ]
 
+const DEFAULT_LOGO_URL = '/logo_horizontal.png'
+
+const INITIAL_FORM = {
+  name: '',
+  website_url: '',
+  tier: '',
+  custom_tier: '',
+  notes: '',
+  is_active: true,
+  show_on_homepage: true,
+  checklist: {},
+  logo_url: DEFAULT_LOGO_URL,
+}
+
 export default function AdminSponsors() {
   const { profile } = useAuth()
   const [sponsors, setSponsors] = useState([])
@@ -19,26 +33,23 @@ export default function AdminSponsors() {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [form, setForm] = useState({
-    name: '',
-    website_url: '',
-    tier: '',
-    notes: '',
-    is_active: true,
-    show_on_homepage: true,
-    checklist: {},
-    custom_tier: '',
-  })
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState(null)
+  const [form, setForm] = useState(INITIAL_FORM)
 
   useEffect(() => {
     fetchSponsors()
   }, [])
 
   async function fetchSponsors() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('sponsors')
       .select('*')
       .order('name')
+    if (error) {
+      console.error('Fetch sponsors error:', error)
+      setFormError(`Failed to load sponsors: ${error.message}`)
+    }
     setSponsors(data ?? [])
     setLoading(false)
   }
@@ -56,49 +67,99 @@ export default function AdminSponsors() {
   }
 
   async function handleLogoUpload(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-  setUploading(true)
-  const ext = file.name.split('.').pop()
-  const path = `sponsors/${Date.now()}.${ext}`
-  const { error } = await supabase.storage.from('sponsors').upload(path, file)
-  if (error) {
-    console.error('Upload error:', error)
-    alert(`Upload failed: ${error.message}`)
-  } else {
-    const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path)
-    setForm(prev => ({ ...prev, logo_url: publicUrl }))
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setFormError(null)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `sponsors/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('sponsors').upload(path, file)
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path)
+      setForm(prev => ({ ...prev, logo_url: publicUrl }))
+    } catch (error) {
+      console.error('Upload error:', error)
+      setFormError(`Logo upload failed: ${error.message}`)
+      alert(`Upload failed: ${error.message}`)
+    } finally {
+      setUploading(false)
+    }
   }
-  setUploading(false)
-}
 
   async function handleSubmit(e) {
-  e.preventDefault()
-  const initials = form.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  const { error } = await supabase.from('sponsors').insert({
-    ...form,
-    initials,
-    tier: form.tier || null,
-    custom_tier: form.tier === 'Custom' ? form.custom_tier : null,
-    created_by: profile.id,
-    organization_id: profile.organization_id,
-  })
-  if (!error) {
-    setShowForm(false)
-    setForm({ name: '', website_url: '', tier: '', custom_tier: '', notes: '', is_active: true, show_on_homepage: true, checklist: {} })
-    fetchSponsors()
+    e.preventDefault()
+    setFormError(null)
+
+    if (!form.name.trim()) {
+      setFormError('Sponsor name is required.')
+      return
+    }
+    if (!profile?.id || !profile?.organization_id) {
+      setFormError('Your profile has not finished loading yet — please wait a moment and try again.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const initials = form.name
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+
+      const payload = {
+        name: form.name.trim(),
+        website_url: form.website_url || null,
+        tier: form.tier || null,
+        custom_tier: form.tier === 'Custom' ? form.custom_tier : null,
+        notes: form.notes || null,
+        is_active: form.is_active,
+        show_on_homepage: form.show_on_homepage,
+        checklist: form.checklist,
+        logo_url: form.logo_url || DEFAULT_LOGO_URL,
+        initials,
+        created_by: profile.id,
+        organization_id: profile.organization_id,
+      }
+
+      const { error } = await supabase.from('sponsors').insert(payload)
+      if (error) throw error
+
+      setShowForm(false)
+      setForm(INITIAL_FORM)
+      await fetchSponsors()
+    } catch (error) {
+      console.error('Insert sponsor error:', error)
+      setFormError(`Failed to add sponsor: ${error.message}`)
+      alert(`Failed to add sponsor: ${error.message}`)
+    } finally {
+      setSubmitting(false)
+    }
   }
-}
 
   async function updateSponsor(id, updates) {
-    await supabase.from('sponsors').update(updates).eq('id', id)
+    const { error } = await supabase.from('sponsors').update(updates).eq('id', id)
+    if (error) {
+      console.error('Update sponsor error:', error)
+      alert(`Failed to update sponsor: ${error.message}`)
+      return
+    }
     fetchSponsors()
     if (selected?.id === id) setSelected(prev => ({ ...prev, ...updates }))
   }
 
   async function deleteSponsor(id) {
     if (!confirm('Delete this sponsor?')) return
-    await supabase.from('sponsors').delete().eq('id', id)
+    const { error } = await supabase.from('sponsors').delete().eq('id', id)
+    if (error) {
+      console.error('Delete sponsor error:', error)
+      alert(`Failed to delete sponsor: ${error.message}`)
+      return
+    }
     setSelected(null)
     fetchSponsors()
   }
@@ -111,7 +172,7 @@ export default function AdminSponsors() {
           <p className="text-sm text-gray-500 mt-1">Manage sponsors and partnerships.</p>
         </div>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setShowForm(true); setFormError(null) }}
           className="bg-[#1e3a6e] text-white font-semibold text-sm px-4 py-2 rounded hover:bg-[#2d538f] transition-colors"
         >
           + Add Sponsor
@@ -123,8 +184,15 @@ export default function AdminSponsors() {
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-semibold text-gray-900">New Sponsor</h2>
-            <button onClick={() => setShowForm(false)} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+            <button onClick={() => { setShowForm(false); setFormError(null) }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
           </div>
+
+          {formError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded px-3 py-2">
+              {formError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -138,31 +206,37 @@ export default function AdminSponsors() {
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
               </div>
             </div>
-            <div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
-  <select name="tier" value={form.tier} onChange={handleChange}
-    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
-    <option value="">Select tier...</option>
-    {['Gold', 'Silver', 'Bronze', 'Partner', 'Custom'].map(t => (
-      <option key={t} value={t}>{t}</option>
-    ))}
-  </select>
-</div>
 
-{form.tier === 'Custom' && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">Custom Tier Name</label>
-    <input type="text" name="custom_tier" value={form.custom_tier ?? ''} onChange={handleChange}
-      placeholder="e.g. Presenting Sponsor, Title Sponsor"
-      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-  </div>
-)}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+              <select name="tier" value={form.tier} onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
+                <option value="">Select tier...</option>
+                {['Gold', 'Silver', 'Bronze', 'Partner', 'Custom'].map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            {form.tier === 'Custom' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Custom Tier Name</label>
+                <input type="text" name="custom_tier" value={form.custom_tier ?? ''} onChange={handleChange}
+                  placeholder="e.g. Presenting Sponsor, Title Sponsor"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
               <input type="file" accept="image/*" onChange={handleLogoUpload}
                 className="text-sm text-gray-600" />
               {uploading && <p className="text-xs text-gray-400 mt-1">Uploading...</p>}
+              <p className="text-xs text-gray-400 mt-1">
+                Defaults to the standard horizontal logo if none is uploaded.
+              </p>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Sponsorship Checklist</label>
               <div className="grid grid-cols-2 gap-2">
@@ -175,11 +249,13 @@ export default function AdminSponsors() {
                 ))}
               </div>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea name="notes" value={form.notes} onChange={handleChange} rows={3}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none" />
             </div>
+
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} className="accent-[#1e3a6e]" />
@@ -190,9 +266,10 @@ export default function AdminSponsors() {
                 <span className="text-sm text-gray-600">Show on homepage</span>
               </label>
             </div>
-            <button type="submit"
-              className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors">
-              Add Sponsor
+
+            <button type="submit" disabled={submitting}
+              className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              {submitting ? 'Adding...' : 'Add Sponsor'}
             </button>
           </form>
         </div>
@@ -211,12 +288,12 @@ export default function AdminSponsors() {
               ${!sponsor.is_active ? 'opacity-50' : ''}`}
           >
             <div className="h-12 flex items-center justify-center mx-auto mb-2">
-  {sponsor.logo_url ? (
-    <img src={sponsor.logo_url} alt={sponsor.name} className="h-full w-auto object-contain max-w-[120px]" />
-  ) : (
-    <span className="text-sm font-bold text-[#1e3a6e]">{sponsor.initials}</span>
-  )}
-</div>
+              {sponsor.logo_url ? (
+                <img src={sponsor.logo_url} alt={sponsor.name} className="h-full w-auto object-contain max-w-[120px]" />
+              ) : (
+                <span className="text-sm font-bold text-[#1e3a6e]">{sponsor.initials}</span>
+              )}
+            </div>
             <p className="text-xs font-semibold text-gray-900 truncate">{sponsor.name}</p>
             {sponsor.tier && <p className="text-xs text-[#b8963e] font-medium">{sponsor.tier}</p>}
           </button>
