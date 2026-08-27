@@ -27,6 +27,7 @@ export default function AdminSponsors() {
     is_active: true,
     show_on_homepage: true,
     checklist: {},
+    custom_tier: '',
   })
 
   useEffect(() => {
@@ -72,20 +73,22 @@ export default function AdminSponsors() {
 }
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    const initials = form.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-    const { error } = await supabase.from('sponsors').insert({
-      ...form,
-      initials,
-      created_by: profile.id,
-      organization_id: profile.organization_id,
-    })
-    if (!error) {
-      setShowForm(false)
-      setForm({ name: '', website_url: '', tier: '', notes: '', is_active: true, show_on_homepage: true, checklist: {} })
-      fetchSponsors()
-    }
+  e.preventDefault()
+  const initials = form.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const { error } = await supabase.from('sponsors').insert({
+    ...form,
+    initials,
+    tier: form.tier || null,
+    custom_tier: form.tier === 'Custom' ? form.custom_tier : null,
+    created_by: profile.id,
+    organization_id: profile.organization_id,
+  })
+  if (!error) {
+    setShowForm(false)
+    setForm({ name: '', website_url: '', tier: '', custom_tier: '', notes: '', is_active: true, show_on_homepage: true, checklist: {} })
+    fetchSponsors()
   }
+}
 
   async function updateSponsor(id, updates) {
     await supabase.from('sponsors').update(updates).eq('id', id)
