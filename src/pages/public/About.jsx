@@ -96,7 +96,7 @@ export default function About() {
         Executive <em className="italic text-[#1e3a6e]">Board</em>
       </h2>
     </div>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
       {LEADERSHIP.map(member => (
         <div key={member.name} className="group" style={{ perspective: '1000px' }}>
           <div className="relative w-full h-64 transition-transform duration-700"
