@@ -1,4 +1,33 @@
-const LEADERSHIP = [
+{/*
+ * ============================================================
+ * LEADERSHIP SECTION — HEADSHOT GUIDE
+ * ============================================================
+ *
+ * DIMENSIONS:    800×800px (square, 1:1 ratio)
+ * MINIMUM:       600×600px
+ * FORMAT:        JPG (80% quality) or WebP
+ * MAX FILE SIZE: ~200KB per photo
+ *
+ * CROPPING:
+ *   - Square crop centered on the face
+ *   - Leave room above head and around shoulders
+ *   - Avoid full body shots
+ *   - Image uses object-cover so square crop is essential
+ *
+ * FILE LOCATION: /public/headshots/
+ *   e.g. /public/headshots/josiah.jpg
+ *
+ * TO ADD A HEADSHOT:
+ *   Update the avatar field in the LEADERSHIP array below:
+ *   { name: 'Josiah White', avatar: '/headshots/josiah.jpg', ... }
+ *
+ * TO USE DEFAULT (no headshot):
+ *   Set avatar to null — shows ERAU-MUN seal as placeholder
+ *   { name: 'Josiah White', avatar: null, ... }
+ * ============================================================
+ */}
+ 
+ const LEADERSHIP = [
   {
     name: 'Josiah White',
     title: 'President',
