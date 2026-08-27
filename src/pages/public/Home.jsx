@@ -45,9 +45,15 @@ function HeroCalendar() {
     return events.filter(e => e.start_date === dateStr)
   }
 
+  const twoWeeksFromNow = new Date(today)
+    twoWeeksFromNow.setDate(today.getDate() + 14)
+
   const upcomingEvents = events
-    .filter(e => new Date(e.start_date + 'T00:00:00') >= today)
-    .slice(0, 4)
+    .filter(e => {
+  const date = new Date(e.start_date + 'T00:00:00')
+    return date >= today && date <= twoWeeksFromNow
+  })
+  .slice(0, 4)
 
   return (
     <div className="bg-white/10 border border-white/20 rounded-2xl p-5 backdrop-blur-sm">
