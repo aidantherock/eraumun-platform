@@ -42,10 +42,10 @@ export default function EventAdminLayout() {
    <div className="min-h-screen bg-gray-50 flex">
       <aside className="w-64 bg-[#0f2040] min-h-screen flex flex-col fixed left-0 top-0 z-40">
         <div className="px-6 py-5 border-b border-white/10">
-          <img src="/logo-horizontal.svg" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" style={{ background: 'transparent', mixBlendMode: 'screen' }} />
+          <img src="/logo-horizontal.png" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
           <p className="text-xs font-bold uppercase tracking-widest text-[#d4af62] mt-2">Event Admin</p>
         </div>
-        
+
         <div className="px-6 py-4 border-b border-white/10">
           <p className="text-sm font-semibold text-white leading-tight">{event?.name ?? 'Loading...'}</p>
           <p className="text-xs text-white/40 mt-0.5 capitalize">{event?.status}</p>
