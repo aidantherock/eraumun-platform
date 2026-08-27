@@ -355,37 +355,37 @@ export default function Home() {
         </section>
       )}
 
-      {/* Sponsors */}
-      {sponsors.length > 0 && (
-        <section className="px-6 py-16 bg-gray-50 border-t border-gray-200">
-          <div className="max-w-7xl mx-auto">
-            <p className="text-center text-xs font-bold uppercase tracking-[0.25em] text-gray-400 mb-8">
-              Our Sponsors
-            </p>
-            <div className="flex items-center justify-center gap-8 flex-wrap">
-              {sponsors.map(sponsor => (
-                <a key={sponsor.id}
-                  href={sponsor.website_url ?? '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  {sponsor.logo_url ? (
-                    <img src={sponsor.logo_url} alt={sponsor.name} className="h-10 w-auto object-contain" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
-                      {sponsor.initials}
-                    </div>
-                  )}
-                  <span className="text-sm font-semibold text-gray-600 group-hover:text-gray-900 transition-colors">
-                    {sponsor.name}
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+     {/* Sponsors */}
+{sponsors.length > 0 && (
+  <section className="px-6 py-16 bg-gray-50 border-t border-gray-200">
+    <div className="max-w-7xl mx-auto">
+      <p className="text-center text-xs font-bold uppercase tracking-[0.25em] text-gray-400 mb-10">
+        Our Sponsors
+      </p>
+      <div className="flex items-end justify-center gap-10 flex-wrap">
+        {sponsors.map(sponsor => (
+          <a key={sponsor.id}
+            href={sponsor.website_url ?? '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col items-center gap-3 opacity-60 hover:opacity-100 transition-opacity"
+          >
+            {sponsor.logo_url ? (
+              <img src={sponsor.logo_url} alt={sponsor.name} className="h-16 w-auto max-w-[160px] object-contain" />
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-500">
+                {sponsor.initials}
+              </div>
+            )}
+            <span className="text-xs font-semibold text-gray-500 group-hover:text-gray-900 transition-colors text-center">
+              {sponsor.name}
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
 
       {/* CTA */}
       <section className="px-6 py-20 bg-gradient-to-br from-[#1e3a6e] to-[#0f2040] text-white">

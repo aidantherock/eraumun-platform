@@ -136,15 +136,24 @@ export default function AdminSponsors() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
-              <select name="tier" value={form.tier} onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
-                <option value="">Select tier...</option>
-                {['Gold', 'Silver', 'Bronze', 'Custom'].map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+  <select name="tier" value={form.tier} onChange={handleChange}
+    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] bg-white">
+    <option value="">Select tier...</option>
+    {['Gold', 'Silver', 'Bronze', 'Partner', 'Custom'].map(t => (
+      <option key={t} value={t}>{t}</option>
+    ))}
+  </select>
+</div>
+
+{form.tier === 'Custom' && (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Custom Tier Name</label>
+    <input type="text" name="custom_tier" value={form.custom_tier ?? ''} onChange={handleChange}
+      placeholder="e.g. Presenting Sponsor, Title Sponsor"
+      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+  </div>
+)}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
               <input type="file" accept="image/*" onChange={handleLogoUpload}
