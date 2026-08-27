@@ -55,18 +55,21 @@ export default function AdminSponsors() {
   }
 
   async function handleLogoUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `sponsors/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('sponsors').upload(path, file)
-    if (!error) {
-      const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path)
-      setForm(prev => ({ ...prev, logo_url: publicUrl }))
-    }
-    setUploading(false)
+  const file = e.target.files?.[0]
+  if (!file) return
+  setUploading(true)
+  const ext = file.name.split('.').pop()
+  const path = `sponsors/${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('sponsors').upload(path, file)
+  if (error) {
+    console.error('Upload error:', error)
+    alert(`Upload failed: ${error.message}`)
+  } else {
+    const { data: { publicUrl } } = supabase.storage.from('sponsors').getPublicUrl(path)
+    setForm(prev => ({ ...prev, logo_url: publicUrl }))
   }
+  setUploading(false)
+}
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -195,13 +198,13 @@ export default function AdminSponsors() {
               ${selected?.id === sponsor.id ? 'border-[#1e3a6e]' : 'border-gray-200'}
               ${!sponsor.is_active ? 'opacity-50' : ''}`}
           >
-            <div className="w-12 h-12 rounded-full bg-[#e8eef7] flex items-center justify-center mx-auto mb-2 overflow-hidden">
-              {sponsor.logo_url ? (
-                <img src={sponsor.logo_url} alt={sponsor.name} className="w-full h-full object-contain" />
-              ) : (
-                <span className="text-sm font-bold text-[#1e3a6e]">{sponsor.initials}</span>
-              )}
-            </div>
+            <div className="h-12 flex items-center justify-center mx-auto mb-2">
+  {sponsor.logo_url ? (
+    <img src={sponsor.logo_url} alt={sponsor.name} className="h-full w-auto object-contain max-w-[120px]" />
+  ) : (
+    <span className="text-sm font-bold text-[#1e3a6e]">{sponsor.initials}</span>
+  )}
+</div>
             <p className="text-xs font-semibold text-gray-900 truncate">{sponsor.name}</p>
             {sponsor.tier && <p className="text-xs text-[#b8963e] font-medium">{sponsor.tier}</p>}
           </button>
