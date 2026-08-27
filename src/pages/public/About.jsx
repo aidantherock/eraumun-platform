@@ -1,14 +1,40 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
-
 const LEADERSHIP = [
-  { name: 'Josiah White', title: 'President', initials: 'JW' },
-  { name: 'Aidan Rock-Arnarson', title: 'Vice President', initials: 'AR' },
-  { name: 'Blake Kopnicky', title: 'Treasurer', initials: 'BK' },
-  { name: 'Joy Ejimadu', title: 'Secretary', initials: 'JE' },
-  { name: 'Sean McGraw', title: 'Parliamentarian', initials: 'SM' },
-  { name: 'Hana Marz', title: 'Public Relations Officer', initials: 'HM' },
+  {
+    name: 'Josiah White',
+    title: 'President',
+    bio: 'Junior - Computer Science',
+    avatar: null,
+  },
+  {
+    name: 'Aidan Rock-Arnarson',
+    title: 'Vice President',
+    bio: 'Masters - Aviation Finance',
+    avatar: null,
+  },
+  {
+    name: 'Blake Kopnicky',
+    title: 'Treasurer',
+    bio: 'Junior - Software Engineering',
+    avatar: null,
+  },
+  {
+    name: 'Joy Ejimadu',
+    title: 'Secretary',
+    bio: 'Sophomore - Aerospace Engineering',
+    avatar: null,
+  },
+  {
+    name: 'Sean McGraw',
+    title: 'Parliamentarian',
+    bio: 'Sophomore - Global Conflict Studies',
+    avatar: null,
+  },
+  {
+    name: 'Hana Marz',
+    title: 'Public Relations Officer',
+    bio: 'Senior - Global Conflict Studies',
+    avatar: null,
+  },
 ]
 
 export default function About() {
@@ -62,27 +88,55 @@ export default function About() {
       </section>
 
       {/* Leadership */}
-      <section className="px-6 py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-10">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">The Team</p>
-            <h2 className="font-serif text-3xl font-bold text-gray-900">
-              Executive <em className="italic text-[#1e3a6e]">Board</em>
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {LEADERSHIP.map(member => (
-              <div key={member.name} className="bg-white border border-gray-200 rounded-lg p-5 text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                <div className="w-14 h-14 rounded-full bg-[#e8eef7] border-2 border-[#b8963e] flex items-center justify-center font-serif text-lg font-bold text-[#1e3a6e] mx-auto mb-3">
-                  {member.initials}
-                </div>
-                <p className="font-semibold text-sm text-gray-900 mb-1 leading-tight">{member.name}</p>
-                <p className="text-xs font-bold uppercase tracking-wide text-[#b8963e]">{member.title}</p>
-              </div>
-            ))}
+<section className="px-6 py-20 bg-gray-50">
+  <div className="max-w-7xl mx-auto">
+    <div className="mb-10">
+      <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#b8963e] mb-2">The Team</p>
+      <h2 className="font-serif text-3xl font-bold text-gray-900">
+        Executive <em className="italic text-[#1e3a6e]">Board</em>
+      </h2>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      {LEADERSHIP.map(member => (
+        <div key={member.name} className="group" style={{ perspective: '1000px' }}>
+          <div className="relative w-full h-64 transition-transform duration-700"
+            style={{ transformStyle: 'preserve-3d' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'rotateY(180deg)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'rotateY(0deg)'}
+          >
+            {/* Front */}
+            <div className="absolute inset-0 bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col items-center justify-center p-5"
+              style={{ backfaceVisibility: 'hidden' }}>
+              {member.avatar ? (
+                <img
+                  src={member.avatar}
+                  alt={member.name}
+                  className="w-20 h-20 rounded-full object-cover border-2 border-[#b8963e] mb-3"
+                />
+              ) : (
+                <img
+                  src="/logo-seal-transparent.png"
+                  alt="ERAU-MUN"
+                  className="w-20 h-20 rounded-full object-contain border-2 border-[#b8963e] mb-3 p-1"
+                />
+              )}
+              <p className="font-semibold text-gray-900 text-sm leading-tight text-center">{member.name}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#b8963e] mt-1 text-center">{member.title}</p>
+            </div>
+
+            {/* Back */}
+            <div className="absolute inset-0 bg-[#1e3a6e] border border-[#b8963e]/30 rounded-xl shadow-sm flex flex-col items-center justify-center p-5 text-center"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+              <p className="font-serif text-lg font-bold text-white mb-1">{member.name}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-3">{member.title}</p>
+              <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
+            </div>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* Join */}
       <section className="px-6 py-20 bg-white">
