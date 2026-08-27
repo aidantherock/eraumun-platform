@@ -9,6 +9,20 @@ const TAB_LABELS = {
   ernie_crisis: 'Ernie Crisis Registrations',
 }
 
+const STATUS_COLORS = {
+  registered: 'bg-blue-100 text-blue-700',
+  waitlisted: 'bg-yellow-100 text-yellow-700',
+  confirmed: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+}
+
+const PUBLIC_FORM_TYPES = [
+  'all', 'unread', 'read',
+  'general', 'membership', 'sponsorship',
+  'adopt_a_delegate', 'media_press',
+  'erniemun_conference', 'conference_invitation',
+]
+
 export default function AdminForms() {
   const [tab, setTab] = useState('public')
   const [forms, setForms] = useState([])
@@ -53,14 +67,14 @@ export default function AdminForms() {
 
   const filtered = tab === 'ernie_crisis'
     ? (filter === 'all' ? forms : forms.filter(f => f.status === filter))
+    : tab === 'public'
+    ? forms.filter(f => {
+        if (filter === 'all') return true
+        if (filter === 'unread') return !f.is_read
+        if (filter === 'read') return f.is_read
+        return f.form_type === filter
+      })
     : (filter === 'all' ? forms : forms.filter(f => filter === 'unread' ? !f.is_read : f.is_read))
-
-  const STATUS_COLORS = {
-    registered: 'bg-blue-100 text-blue-700',
-    waitlisted: 'bg-yellow-100 text-yellow-700',
-    confirmed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700',
-  }
 
   return (
     <div className="space-y-6">
@@ -84,13 +98,21 @@ export default function AdminForms() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {tab === 'ernie_crisis' ? (
           ['all', 'registered', 'waitlisted', 'confirmed', 'cancelled'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all capitalize
                 ${filter === f ? 'bg-[#1e3a6e] text-white border-[#1e3a6e]' : 'border-gray-200 text-gray-600 hover:border-[#1e3a6e]'}`}>
               {f}
+            </button>
+          ))
+        ) : tab === 'public' ? (
+          PUBLIC_FORM_TYPES.map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all capitalize
+                ${filter === f ? 'bg-[#1e3a6e] text-white border-[#1e3a6e]' : 'border-gray-200 text-gray-600 hover:border-[#1e3a6e]'}`}>
+              {f.replace(/_/g, ' ')}
             </button>
           ))
         ) : (
@@ -113,7 +135,10 @@ export default function AdminForms() {
             ) : filtered.length > 0 ? filtered.map(form => (
               <button
                 key={form.id}
-                onClick={() => { setSelected(form); if (!form.is_read && tab !== 'ernie_crisis') markRead(form.id) }}
+                onClick={() => {
+                  setSelected(form)
+                  if (!form.is_read && tab !== 'ernie_crisis') markRead(form.id)
+                }}
                 className={`w-full px-5 py-4 text-left hover:bg-gray-50 transition-colors
                   ${selected?.id === form.id ? 'bg-[#e8eef7]' : ''}`}
               >
@@ -129,6 +154,11 @@ export default function AdminForms() {
                     <p className="text-xs text-gray-500 mt-0.5 truncate">
                       {tab === 'ernie_crisis' ? form.school : form.email ?? form.profiles?.email}
                     </p>
+                    {tab === 'public' && form.form_type && (
+                      <p className="text-xs text-[#b8963e] font-medium mt-0.5 capitalize">
+                        {form.form_type.replace(/_/g, ' ')}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(form.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
@@ -202,12 +232,17 @@ export default function AdminForms() {
               ) : (
                 <>
                   {[
-                    ['From', tab === 'portal' ? `${selected.profiles?.first_name} ${selected.profiles?.last_name}` : selected.name],
+                    ['From', tab === 'portal'
+                      ? `${selected.profiles?.first_name} ${selected.profiles?.last_name}`
+                      : selected.name],
                     ['Email', selected.email ?? selected.profiles?.email],
-                    ['Type', selected.form_type?.replace(/_/g, ' ')],
+                    ['Form Type', selected.form_type?.replace(/_/g, ' ')],
                     ['Subject', selected.subject],
+                    ['School / Org', selected.school],
                     ['Anonymous', selected.is_anonymous ? 'Yes' : null],
-                    ['Submitted', new Date(selected.created_at).toLocaleDateString()],
+                    ['Submitted', new Date(selected.created_at).toLocaleDateString('en-US', {
+                      month: 'long', day: 'numeric', year: 'numeric'
+                    })],
                   ].filter(([, v]) => v).map(([label, value]) => (
                     <div key={label}>
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
@@ -218,6 +253,12 @@ export default function AdminForms() {
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Message</p>
                     <p className="text-sm text-gray-700 mt-0.5 leading-relaxed whitespace-pre-wrap">{selected.message}</p>
                   </div>
+                  {!selected.is_read && (
+                    <button onClick={() => markRead(selected.id)}
+                      className="text-xs text-[#1e3a6e] font-semibold border border-[#1e3a6e] px-3 py-1.5 rounded hover:bg-[#e8eef7] transition-colors">
+                      Mark as Read
+                    </button>
+                  )}
                 </>
               )}
             </div>
