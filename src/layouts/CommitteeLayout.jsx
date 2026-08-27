@@ -84,7 +84,7 @@ export default function CommitteeLayout() {
     <div className="min-h-screen bg-gray-50 flex">
       <aside className="w-64 bg-[#0f2040] min-h-screen flex flex-col fixed left-0 top-0 z-40">
         <div className="px-6 py-5 border-b border-white/10">
-          <img src="/logo-horizontal.jpg" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
+          <img src="/logo-horizontal.svg" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
           <p className="text-xs font-bold uppercase tracking-widest text-[#d4af62] mt-2">
             {isCrisis ? 'Crisis Committee' : 'General Assembly'}
           </p>

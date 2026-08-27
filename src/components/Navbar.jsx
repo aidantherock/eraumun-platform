@@ -29,7 +29,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
 
         <Link to="/" className="flex items-center">
-          <img src="/logo-horizontal.jpg" alt="ERAU-MUN" className="h-11 w-auto" />
+          <img src="/logo-horizontal.svg" alt="ERAU-MUN" className="h-11 w-auto" />
         </Link>
 
         <ul className="hidden md:flex items-center gap-1">

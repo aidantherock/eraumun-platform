@@ -27,7 +27,7 @@ export default function PortalLayout() {
 
         {/* Logo */}
         <div className="px-6 py-5 border-b border-white/10">
-          <img src="/logo-horizontal.jpg" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
+          <img src="/logo-horizontal.svg" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
         </div>
 
         {/* User info */}
