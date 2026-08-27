@@ -98,9 +98,9 @@ export default function About() {
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
       {LEADERSHIP.map(member => (
-        <div key={member.name} className="group" style={{ perspective: '1000px' }}>
+        <div key={member.name} style={{ perspective: '1000px' }} className="h-72">
           <div
-            className="relative w-full h-72 transition-transform duration-700 rounded-xl overflow-hidden"
+            className="relative w-full h-full transition-transform duration-700 cursor-pointer"
             style={{ transformStyle: 'preserve-3d' }}
             onMouseEnter={e => e.currentTarget.style.transform = 'rotateY(180deg)'}
             onMouseLeave={e => e.currentTarget.style.transform = 'rotateY(0deg)'}
@@ -108,9 +108,8 @@ export default function About() {
             {/* Front */}
             <div
               className="absolute inset-0 rounded-xl overflow-hidden shadow-md"
-              style={{ backfaceVisibility: 'hidden' }}
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
             >
-              {/* Photo or seal as full card */}
               {member.avatar ? (
                 <img
                   src={member.avatar}
@@ -126,8 +125,6 @@ export default function About() {
                   />
                 </div>
               )}
-
-              {/* Blue ribbon bottom left */}
               <div className="absolute bottom-0 left-0 right-0 bg-[#1e3a6e]/90 px-4 py-3">
                 <p className="font-semibold text-white text-sm leading-tight">{member.name}</p>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mt-0.5">{member.title}</p>
@@ -135,14 +132,14 @@ export default function About() {
             </div>
 
             {/* Back */}
-<div
-  className="absolute inset-0 bg-[#1e3a6e] border border-[#b8963e]/30 rounded-xl shadow-sm flex flex-col items-center justify-center p-5 text-center"
-  style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
->
-  <p className="font-serif text-lg font-bold text-white mb-1">{member.name}</p>
-  <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-3">{member.title}</p>
-  <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
-</div>
+            <div
+              className="absolute inset-0 bg-[#1e3a6e] border border-[#b8963e]/30 rounded-xl shadow-sm flex flex-col items-center justify-center p-5 text-center"
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            >
+              <p className="font-serif text-lg font-bold text-white mb-1">{member.name}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-3">{member.title}</p>
+              <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
+            </div>
           </div>
         </div>
       ))}
