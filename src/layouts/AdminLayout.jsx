@@ -6,13 +6,13 @@ const NAV = [
   { label: 'Dashboard', to: '/admin', end: true },
   { label: 'Users', to: '/admin/users' },
   { label: 'Announcements', to: '/admin/announcements' },
-  { label: 'Sponsors', to: '/admin/sponsors' },
-  { label: 'Forms', to: '/admin/forms' },
-  { label: 'Events', to: '/admin/events' },
-  { label: 'Emails', to: '/admin/emails' },
   { label: 'News', to: '/admin/news' },
-  { label: 'Awards', to: '/admin/awards' },
-  { label: 'Gallery', to: '/admin/gallery' },
+  { label: 'Sponsorships', to: '/admin/sponsors' },
+  { label: 'Manage Events', to: '/admin/events' },
+  { label: 'Manage Awards', to: '/admin/awards' },
+  { label: 'Manage Photos', to: '/admin/gallery' },
+  { label: 'Form Inbox', to: '/admin/forms' },
+  { label: 'Send an Email', to: '/admin/emails' },
 ]
 
 export default function AdminLayout() {
