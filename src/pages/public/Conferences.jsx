@@ -42,19 +42,19 @@ export default function Conferences() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: inviteForm.name,
-          email: inviteForm.email,
-          subject: `Conference Invitation: ${inviteForm.conference}`,
-          message: `
+  form_type: 'conference_invitation',
+  name: inviteForm.name,
+  email: inviteForm.email,
+  subject: `Conference Invitation: ${inviteForm.conference}`,
+  message: `
 School/Organization: ${inviteForm.school}
 Conference: ${inviteForm.conference}
 Date: ${inviteForm.date}
 Location: ${inviteForm.location}
 
 ${inviteForm.message}
-          `.trim(),
-          type: 'conference_invitation'
-        })
+  `.trim(),
+})
       })
       setInviteSubmitted(true)
     } catch (err) {

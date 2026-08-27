@@ -13,6 +13,7 @@ const FORM_LABELS = {
   adopt_a_delegate: 'Adopt-a-Delegate',
   media_press: 'Media & Press',
   erniemun_conference: 'ErnieMUN / Conference Question',
+  conference_invitation: 'Conference Invitation',
 }
 
 exports.handler = async (event) => {
