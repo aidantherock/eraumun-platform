@@ -13,7 +13,7 @@ export default function Footer() {
   ]
 
   const involvedLinks = [
-    { label: 'Join ERAU-MUN', to: '/register' },
+    { label: 'Join ERAU-MUN', href: 'https://campusgroups.erau.edu/mun/club_signup' },
     { label: 'Ernie Crisis Simulation', to: '/ernie-crisis' },
     { label: 'Sponsor Us', to: '/support' },
     { label: 'Adopt-a-Delegate', to: '/support' },
@@ -37,8 +37,12 @@ export default function Footer() {
           <p className="text-xs mt-2 leading-relaxed text-white/65">
             Embry-Riddle Aeronautical University's official Model United Nations organization, based in Daytona Beach, Florida.
           </p>
-          <a href="https://discord.gg/eraumun" target="_blank" rel="noopener noreferrer"
-            className="mt-4 text-xs text-[#d4af62] font-semibold hover:text-white transition-colors block">
+          <a
+            href="https://discord.gg/XSrEjezbZy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 text-xs text-[#d4af62] font-semibold hover:text-white transition-colors block"
+          >
             Join our Discord
           </a>
         </div>
@@ -61,9 +65,20 @@ export default function Footer() {
           <ul className="flex flex-col gap-2">
             {involvedLinks.map(link => (
               <li key={link.label}>
-                <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
-                  {link.label}
-                </Link>
+                {link.href ? (
+                  
+                    <a href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-white/65 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link to={link.to} className="text-sm text-white/65 hover:text-white transition-colors">
+                    {link.label}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -85,12 +100,7 @@ export default function Footer() {
             <ul className="flex flex-col gap-2">
               <li>
                 <Link to="/login" className="text-sm text-white/65 hover:text-white transition-colors">
-                  Member Sign In
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="text-sm text-white/65 hover:text-white transition-colors">
-                  Create Account
+                  Member Portal
                 </Link>
               </li>
             </ul>

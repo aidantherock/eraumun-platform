@@ -98,7 +98,7 @@ export default function About() {
             <div className="flex flex-col gap-4">
               {[
                 { step: '1', title: 'Attend a GBM', desc: 'Come to one of our General Body Meetings held every other Tuesday. Check the calendar for dates.' },
-                { step: '2', title: 'Create an Account', desc: 'Register on our platform to access the full member portal, calendar, and event signups.' },
+                { step: '2', title: 'Create an Account', desc: 'Register on CampusGroups to access the full member portal, calendar, and event signups.' },
                 { step: '3', title: 'Start Participating', desc: 'Attend training sessions, sign up for conferences, and get involved in club activities.' },
               ].map(item => (
                 <div key={item.step} className="flex gap-3 items-start">
@@ -116,7 +116,7 @@ export default function About() {
           <div className="bg-[#1e3a6e] rounded-lg p-8 text-white">
             <h3 className="font-serif text-2xl font-bold mb-2">Ready to Join?</h3>
             <p className="text-white/70 text-sm leading-relaxed mb-5 font-light">
-              Create your account today and get access to the full ERAU-MUN member portal.
+              Sign up on CampusGroups today and get access to the full ERAU-MUN member experience.
             </p>
             <ul className="flex flex-col gap-2 mb-6">
               {[
@@ -133,12 +133,14 @@ export default function About() {
                 </li>
               ))}
             </ul>
-            <Link
-              to="/register"
+            
+              <a href="https://campusgroups.erau.edu/mun/club_signup"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block text-center bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors"
             >
-              Create Your Account
-            </Link>
+              Join on CampusGroups
+            </a>
           </div>
         </div>
       </section>

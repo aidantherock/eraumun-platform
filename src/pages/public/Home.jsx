@@ -2,6 +2,124 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
+function HeroCalendar() {
+  const today = new Date()
+  const [currentYear, setCurrentYear] = useState(today.getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
+  const [events, setEvents] = useState([])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [])
+
+  async function fetchEvents() {
+    const { data } = await supabase
+      .from('events')
+      .select('id, name, start_date, category')
+      .eq('is_cancelled', false)
+      .not('status', 'eq', 'draft')
+      .order('start_date')
+    setEvents(data ?? [])
+  }
+
+  function prevMonth() {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1) }
+    else setCurrentMonth(m => m - 1)
+  }
+
+  function nextMonth() {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1) }
+    else setCurrentMonth(m => m + 1)
+  }
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay()
+  const monthName = new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  const calendarDays = []
+  for (let i = 0; i < firstDay; i++) calendarDays.push(null)
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d)
+
+  function getEventsForDay(day) {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return events.filter(e => e.start_date === dateStr)
+  }
+
+  const upcomingEvents = events
+    .filter(e => new Date(e.start_date + 'T00:00:00') >= today)
+    .slice(0, 4)
+
+  return (
+    <div className="bg-white/10 border border-white/20 rounded-2xl p-5 backdrop-blur-sm">
+      {/* Calendar header */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={prevMonth}
+          className="w-7 h-7 rounded flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors text-lg">
+          &#8249;
+        </button>
+        <p className="text-sm font-semibold text-white">{monthName}</p>
+        <button onClick={nextMonth}
+          className="w-7 h-7 rounded flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors text-lg">
+          &#8250;
+        </button>
+      </div>
+
+      {/* Day labels */}
+      <div className="grid grid-cols-7 mb-1">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <div key={i} className="text-center text-xs font-bold text-white/40 py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-0.5">
+        {calendarDays.map((day, i) => {
+          if (!day) return <div key={`e-${i}`} />
+          const dayEvents = getEventsForDay(day)
+          const date = new Date(currentYear, currentMonth, day)
+          const isToday = date.toDateString() === today.toDateString()
+          return (
+            <div key={day} className={`min-h-[32px] p-0.5 rounded ${isToday ? 'bg-[#b8963e]/30' : ''}`}>
+              <div className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mx-auto
+                ${isToday ? 'bg-[#d4af62] text-[#1e3a6e]' : 'text-white/70'}`}>
+                {day}
+              </div>
+              {dayEvents.length > 0 && (
+                <div className="w-1.5 h-1.5 rounded-full bg-[#d4af62] mx-auto mt-0.5" />
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Upcoming events */}
+      {upcomingEvents.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2">Upcoming</p>
+          <div className="space-y-2">
+            {upcomingEvents.map(ev => (
+              <div key={ev.id} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#d4af62] flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white/80 truncate">{ev.name}</p>
+                  <p className="text-xs text-white/40">
+                    {new Date(ev.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Link to="/news"
+        className="block text-center text-xs text-white/50 hover:text-white mt-4 transition-colors">
+        View full calendar →
+      </Link>
+    </div>
+  )
+}
+
 export default function Home() {
   const [news, setNews] = useState([])
   const [sponsors, setSponsors] = useState([])
@@ -59,25 +177,36 @@ export default function Home() {
           }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-6 py-24 md:py-32">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#d4af62] mb-4">
-              Embry-Riddle Aeronautical University
-            </p>
-            <h1 className="font-serif text-5xl md:text-6xl font-bold leading-[1.1] mb-6">
-              Model <em className="italic text-[#d4af62]">United</em><br />Nations
-            </h1>
-            <p className="text-white/70 text-lg leading-relaxed font-light mb-8 max-w-xl">
-              Developing the next generation of global leaders through diplomacy, debate, and international cooperation at Embry-Riddle Aeronautical University.
-            </p>
-            <div className="flex items-center gap-4 flex-wrap">
-              <Link to="/register"
-                className="bg-[#b8963e] text-white font-semibold px-7 py-3 rounded hover:bg-[#d4af62] transition-colors text-sm">
-                Join ERAU-MUN
-              </Link>
-              <Link to="/about"
-                className="border border-white/30 text-white font-semibold px-7 py-3 rounded hover:bg-white/10 transition-colors text-sm">
-                Learn More
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            {/* Left — text */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#d4af62] mb-4">
+                Embry-Riddle Aeronautical University
+              </p>
+              <h1 className="font-serif text-5xl md:text-6xl font-bold leading-[1.1] mb-6">
+                Model <em className="italic text-[#d4af62]">United</em><br />Nations
+              </h1>
+              <p className="text-white/70 text-lg leading-relaxed font-light mb-8 max-w-xl">
+                Developing the next generation of global leaders through diplomacy, debate, and international cooperation at Embry-Riddle Aeronautical University.
+              </p>
+              <div className="flex items-center gap-4 flex-wrap">
+                
+                  <a href="https://campusgroups.erau.edu/mun/club_signup"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#b8963e] text-white font-semibold px-7 py-3 rounded hover:bg-[#d4af62] transition-colors text-sm">
+                  Join on CampusGroups
+                </a>
+                <Link to="/about"
+                  className="border border-white/30 text-white font-semibold px-7 py-3 rounded hover:bg-white/10 transition-colors text-sm">
+                  Learn More
+                </Link>
+              </div>
+            </div>
+
+            {/* Right — mini calendar */}
+            <div className="hidden md:block">
+              <HeroCalendar />
             </div>
           </div>
         </div>
@@ -263,10 +392,13 @@ export default function Home() {
             Join ERAU-MUN and develop skills in diplomacy, public speaking, research, and global leadership. Open to all ERAU students.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link to="/register"
+            
+              <a href="https://campusgroups.erau.edu/mun/club_signup"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-[#b8963e] text-white font-semibold px-7 py-3 rounded hover:bg-[#d4af62] transition-colors text-sm">
-              Join Now
-            </Link>
+              Join on CampusGroups
+            </a>
             <Link to="/contact"
               className="border border-white/30 text-white font-semibold px-7 py-3 rounded hover:bg-white/10 transition-colors text-sm">
               Contact Us
