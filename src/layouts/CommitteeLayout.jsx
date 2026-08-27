@@ -10,6 +10,7 @@ export default function CommitteeLayout() {
   const [committee, setCommittee] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (committeeId && profile?.id) {
@@ -49,11 +50,11 @@ export default function CommitteeLayout() {
     { label: 'Floor', to: 'floor' },
     { label: 'Messages', to: 'messages' },
     ...(isCrisis ? [
-  { label: 'Crisis Feed', to: 'crisis' },
-  { label: 'Crisis Notes', to: 'notes' },
-] : []),
+      { label: 'Crisis Feed', to: 'crisis' },
+      { label: 'Crisis Notes', to: 'notes' },
+    ] : []),
     ...(isStaff ? [{ label: 'Voting', to: 'voting' }] : []),
-  { label: 'Awards', to: 'awards' },
+    { label: 'Awards', to: 'awards' },
   ]
 
   if (loading) {
@@ -82,9 +83,20 @@ export default function CommitteeLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-64 bg-[#0f2040] min-h-screen flex flex-col fixed left-0 top-0 z-40">
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`w-64 bg-[#0f2040] min-h-screen flex flex-col fixed left-0 top-0 z-40 transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="px-6 py-5 border-b border-white/10">
-          <img src="/logo-horizontal.png" alt="ERAU-MUN" className="h-9 w-auto brightness-0 invert" />
+          <img src="/logo-horizontal.png" alt="ERAU-MUN" className="w-full h-auto brightness-0 invert" style={{ background: 'transparent', mixBlendMode: 'screen' }} />
           <p className="text-xs font-bold uppercase tracking-widest text-[#d4af62] mt-2">
             {isCrisis ? 'Crisis Committee' : 'General Assembly'}
           </p>
@@ -108,6 +120,7 @@ export default function CommitteeLayout() {
               key={item.label}
               to={`${base}/${item.to}`}
               end={item.end}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                 ${isActive ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/10 hover:text-white'}`
@@ -125,21 +138,21 @@ export default function CommitteeLayout() {
 
         <div className="px-3 py-4 border-t border-white/10 flex flex-col gap-1">
           <button
-            onClick={() => navigate(`/portal/committee/${committeeId}/conference`)}
+            onClick={() => { navigate(`/portal/committee/${committeeId}/conference`); setSidebarOpen(false) }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#d4af62] hover:bg-white/10 transition-colors w-full text-left"
           >
             ⚡ Conference Mode
           </button>
           {committee.events && (
             <button
-              onClick={() => navigate(`/portal/events/${committee.events.id}`)}
+              onClick={() => { navigate(`/portal/events/${committee.events.id}`); setSidebarOpen(false) }}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition-colors w-full text-left"
             >
               Back to Event
             </button>
           )}
           <button
-            onClick={() => navigate('/portal')}
+            onClick={() => { navigate('/portal'); setSidebarOpen(false) }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/10 transition-colors w-full text-left"
           >
             Portal Home
@@ -147,21 +160,32 @@ export default function CommitteeLayout() {
         </div>
       </aside>
 
-      <div className="ml-64 flex-1 flex flex-col min-h-screen">
-        <header className="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e]">
-              {committee.name}
-              {committee.events?.name && ` — ${committee.events.name}`}
-            </p>
+      {/* Main content */}
+      <div className="md:ml-64 flex-1 flex flex-col min-h-screen">
+        <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="md:hidden p-2 rounded text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b8963e]">
+                {committee.name}
+                {committee.events?.name && ` — ${committee.events.name}`}
+              </p>
+            </div>
             {isStaff && (
-              <span className="text-xs font-bold text-[#1e3a6e] bg-[#e8eef7] px-2.5 py-1 rounded-full">
+              <span className="text-xs font-bold text-[#1e3a6e] bg-[#e8eef7] px-2.5 py-1 rounded-full flex-shrink-0">
                 Staff
               </span>
             )}
           </div>
         </header>
-        <main className="flex-1 px-8 py-8">
+        <main className="flex-1 px-6 md:px-8 py-8">
           <Outlet context={{ committee, userRole, isStaff, isCrisis, refetch: fetchCommittee }} />
         </main>
       </div>
