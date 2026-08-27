@@ -99,36 +99,48 @@ export default function About() {
     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
       {LEADERSHIP.map(member => (
         <div key={member.name} className="group" style={{ perspective: '1000px' }}>
-          <div className="relative w-full h-64 transition-transform duration-700"
+          <div
+            className="relative w-full h-72 transition-transform duration-700 rounded-xl overflow-hidden"
             style={{ transformStyle: 'preserve-3d' }}
             onMouseEnter={e => e.currentTarget.style.transform = 'rotateY(180deg)'}
             onMouseLeave={e => e.currentTarget.style.transform = 'rotateY(0deg)'}
           >
             {/* Front */}
-            <div className="absolute inset-0 bg-white border border-gray-200 rounded-xl shadow-sm flex flex-col items-center justify-center p-5"
-              style={{ backfaceVisibility: 'hidden' }}>
+            <div
+              className="absolute inset-0 rounded-xl overflow-hidden shadow-md"
+              style={{ backfaceVisibility: 'hidden' }}
+            >
+              {/* Photo or seal as full card */}
               {member.avatar ? (
                 <img
                   src={member.avatar}
                   alt={member.name}
-                  className="w-20 h-20 rounded-full object-cover border-2 border-[#b8963e] mb-3"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <img
-                  src="/logo-seal-transparent.png"
-                  alt="ERAU-MUN"
-                  className="w-20 h-20 rounded-full object-contain border-2 border-[#b8963e] mb-3 p-1"
-                />
+                <div className="w-full h-full bg-[#e8eef7] flex items-center justify-center">
+                  <img
+                    src="/logo-seal-transparent.png"
+                    alt="ERAU-MUN"
+                    className="w-32 h-32 object-contain opacity-30"
+                  />
+                </div>
               )}
-              <p className="font-semibold text-gray-900 text-sm leading-tight text-center">{member.name}</p>
-              <p className="text-xs font-bold uppercase tracking-wide text-[#b8963e] mt-1 text-center">{member.title}</p>
+
+              {/* Blue ribbon bottom left */}
+              <div className="absolute bottom-0 left-0 right-0 bg-[#1e3a6e]/90 px-4 py-3">
+                <p className="font-semibold text-white text-sm leading-tight">{member.name}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mt-0.5">{member.title}</p>
+              </div>
             </div>
 
             {/* Back */}
-            <div className="absolute inset-0 bg-[#1e3a6e] border border-[#b8963e]/30 rounded-xl shadow-sm flex flex-col items-center justify-center p-5 text-center"
-              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-              <p className="font-serif text-lg font-bold text-white mb-1">{member.name}</p>
-              <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-3">{member.title}</p>
+            <div
+              className="absolute inset-0 bg-[#1e3a6e] rounded-xl shadow-md flex flex-col justify-center p-6 text-left"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            >
+              <p className="font-serif text-xl font-bold text-white mb-1">{member.name}</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#d4af62] mb-4">{member.title}</p>
               <p className="text-xs text-white/70 leading-relaxed">{member.bio}</p>
             </div>
           </div>
