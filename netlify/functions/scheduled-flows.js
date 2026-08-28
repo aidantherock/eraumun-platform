@@ -17,40 +17,30 @@ async function sendEmail({ to, subject, html }) {
   })
 }
 
-async function logSent(flowKey) {
-  await supabase.from('audit_logs').insert({
-    action: `scheduled_flow:${flowKey}`,
-    created_at: new Date().toISOString(),
-  })
-}
-
-async function alreadySentToday(flowKey) {
+async function alreadySentToday(flowKey, entityId = null) {
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
-  const { count } = await supabase
+
+  let query = supabase
     .from('audit_logs')
     .select('*', { count: 'exact', head: true })
-    .eq('action', `scheduled_flow:${flowKey}`)
+    .eq('action', flowKey)
     .gte('created_at', todayStart.toISOString())
+
+  if (entityId) query = query.eq('entity_id', entityId)
+
+  const { count } = await query
   return count > 0
 }
 
-async function alreadySentToUser(flowKey, userId) {
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  const { count } = await supabase
-    .from('audit_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('action', `scheduled_flow:${flowKey}:${userId}`)
-    .gte('created_at', todayStart.toISOString())
-  return count > 0
-}
-
-async function logSentToUser(flowKey, userId) {
-  await supabase.from('audit_logs').insert({
-    action: `scheduled_flow:${flowKey}:${userId}`,
-    created_at: new Date().toISOString(),
-  })
+async function logSent(flowKey, entityId = null) {
+  const payload = {
+    action: flowKey,
+    entity_type: 'scheduled_flow',
+    metadata: { sent_at: new Date().toISOString() },
+  }
+  if (entityId) payload.entity_id = entityId
+  await supabase.from('audit_logs').insert(payload)
 }
 
 // ── Flow 1: Event Reminder (24hrs before) ──────────────────────
@@ -79,7 +69,7 @@ async function eventReminders() {
       if (!profile?.email) continue
 
       const flowKey = `event_reminder:${event.id}`
-      if (await alreadySentToUser(flowKey, reg.user_id)) continue
+      if (await alreadySentToday(flowKey, reg.user_id)) continue
 
       const template = templates.eventReminder({
         firstName: profile.first_name ?? 'there',
@@ -92,7 +82,7 @@ async function eventReminders() {
         portalUrl: 'https://eraumun.com',
       })
       await sendEmail({ to: profile.email, ...template })
-      await logSentToUser(flowKey, reg.user_id)
+      await logSent(flowKey, reg.user_id)
     }
   }
 }
@@ -114,7 +104,9 @@ async function inviteExpiryWarnings() {
     const flowKey = `invite_expiry:${invite.id}`
     if (await alreadySentToday(flowKey)) continue
 
-    const daysLeft = Math.ceil((new Date(invite.expires_at) - new Date()) / (1000 * 60 * 60 * 24))
+    const daysLeft = Math.ceil(
+      (new Date(invite.expires_at) - new Date()) / (1000 * 60 * 60 * 24)
+    )
     const template = templates.inviteExpiring({
       email: invite.email,
       daysLeft,
@@ -171,12 +163,13 @@ async function onboardingDay3() {
     .lte('created_at', new Date(threeDaysAgo.getTime() + 86400000).toISOString())
 
   for (const user of users ?? []) {
-    const flowKey = `onboarding_day3:${user.id}`
-    if (await alreadySentToday(flowKey)) continue
+    if (await alreadySentToday('onboarding_day3', user.id)) continue
 
-    const template = templates.onboardingDay3({ firstName: user.first_name ?? 'there' })
+    const template = templates.onboardingDay3({
+      firstName: user.first_name ?? 'there'
+    })
     await sendEmail({ to: user.email, ...template })
-    await logSent(flowKey)
+    await logSent('onboarding_day3', user.id)
   }
 }
 
@@ -209,7 +202,7 @@ async function postConferenceFeedback() {
       const template = templates.postConferenceFeedback({
         firstName: profile.first_name ?? 'there',
         eventName: event.name,
-        feedbackUrl: `https://eraumun.com/portal/events`,
+        feedbackUrl: 'https://eraumun.com/portal/events',
       })
       await sendEmail({ to: profile.email, ...template })
     }
