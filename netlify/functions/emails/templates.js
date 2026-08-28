@@ -37,7 +37,7 @@ function base({ title, preheader, body }) {
   <div class="wrapper">
     <div class="card">
       <div class="header">
-        <img src="https://eraumun.com/logo-horizontal.jpg" alt="ERAU-MUN" />
+        <img src="https://eraumun.com/logo-horizontal.png" alt="ERAU-MUN" />
       </div>
       <div class="header-bar"></div>
       <div class="body">
