@@ -27,6 +27,7 @@ import Login from './pages/public/Login'
 import Register from './pages/public/Register'
 import Pending from './pages/public/Pending'
 import InviteAccept from './pages/public/InviteAccept'
+import Demo from './pages/public/Demo'
 
 // Portal pages
 import PortalHome from './pages/portal/Home'
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/gallery" element={<Gallery />} />
+            <Route path="/demo" element={<Demo />} />
           </Route>
 
           {/* ── Auth routes ── */}
