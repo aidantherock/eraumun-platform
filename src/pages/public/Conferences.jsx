@@ -42,19 +42,19 @@ export default function Conferences() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-  form_type: 'conference_invitation',
-  name: inviteForm.name,
-  email: inviteForm.email,
-  subject: `Conference Invitation: ${inviteForm.conference}`,
-  message: `
+          form_type: 'conference_invitation',
+          name: inviteForm.name,
+          email: inviteForm.email,
+          subject: `Conference Invitation: ${inviteForm.conference}`,
+          message: `
 School/Organization: ${inviteForm.school}
 Conference: ${inviteForm.conference}
 Date: ${inviteForm.date}
 Location: ${inviteForm.location}
 
 ${inviteForm.message}
-  `.trim(),
-})
+          `.trim(),
+        })
       })
       setInviteSubmitted(true)
     } catch (err) {
@@ -100,31 +100,39 @@ ${inviteForm.message}
               {[...conferences]
                 .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
                 .map(conf => (
-                <div key={conf.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
-                  <div className="bg-[#1e3a6e] px-5 py-4">
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#d4af62] bg-[#b8963e]/20 px-2 py-0.5 rounded mb-2 inline-block">
-                      {conf.status === 'active' ? 'Upcoming' : 'Past'}
-                    </span>
-                    <h3 className="font-serif text-xl font-bold text-white mt-1">{conf.name}</h3>
-                    {conf.location && (
-                      <p className="text-xs text-white/55 mt-1">{conf.location}</p>
-                    )}
+                  <div key={conf.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <div className="bg-[#1e3a6e] px-5 py-4">
+                      <span className="text-xs font-bold uppercase tracking-widest text-[#d4af62] bg-[#b8963e]/20 px-2 py-0.5 rounded mb-2 inline-block">
+                        {conf.status === 'active' ? 'Upcoming' : 'Past'}
+                      </span>
+                      <h3 className="font-serif text-xl font-bold text-white mt-1">{conf.name}</h3>
+                      {conf.location && (
+                        <p className="text-xs text-white/55 mt-1">{conf.location}</p>
+                      )}
+                    </div>
+                    <div className="px-5 py-4">
+                      {conf.start_date && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          {new Date(conf.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          {conf.end_date && conf.end_date !== conf.start_date && (
+                            <> &mdash; {new Date(conf.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>
+                          )}
+                        </p>
+                      )}
+                      {conf.description && (
+                        <p className="text-sm text-gray-500 leading-relaxed mb-3">{conf.description}</p>
+                      )}
+                      {conf.status === 'closed' && (
+                        <Link
+                          to={`/conferences/${conf.id}`}
+                          className="text-xs font-semibold text-[#1e3a6e] border border-[#1e3a6e] px-3 py-1.5 rounded hover:bg-[#e8eef7] transition-colors inline-block mt-1"
+                        >
+                          View Recap →
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                  <div className="px-5 py-4">
-                    {conf.start_date && (
-                      <p className="text-xs text-gray-500 mb-2">
-                        {new Date(conf.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                        {conf.end_date && conf.end_date !== conf.start_date && (
-                          <> &mdash; {new Date(conf.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>
-                        )}
-                      </p>
-                    )}
-                    {conf.description && (
-                      <p className="text-sm text-gray-500 leading-relaxed">{conf.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           ) : (
             <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
@@ -135,115 +143,109 @@ ${inviteForm.message}
       </section>
 
       {/* Conference Invitation CTA */}
-<section className="px-6 py-12 bg-gray-50 border-t border-gray-200">
-  <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
-    <div>
-      <p className="font-semibold text-gray-900">Want to invite ERAU-MUN to your conference?</p>
-      <p className="text-sm text-gray-500 mt-0.5">We'd love to attend. Fill out a quick form and we'll get back to you.</p>
-    </div>
-    <button
-      onClick={() => setShowInviteForm(true)}
-      className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors flex-shrink-0"
-    >
-      Invite Us
-    </button>
-  </div>
-</section>
-
-{/* Invite Form Modal */}
-{showInviteForm && (
-  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
-        <h2 className="font-semibold text-gray-900">Invite ERAU-MUN to Your Conference</h2>
-        <button onClick={() => { setShowInviteForm(false); setInviteSubmitted(false) }}
-          className="text-gray-400 hover:text-gray-600 text-lg">&#x2715;</button>
-      </div>
-      <div className="p-6">
-        {inviteSubmitted ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="font-semibold text-gray-900 mb-1">Thank you for reaching out!</p>
-            <p className="text-sm text-gray-500">We'll review your invitation and get back to you as soon as possible.</p>
+      <section className="px-6 py-12 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <p className="font-semibold text-gray-900">Want to invite ERAU-MUN to your conference?</p>
+            <p className="text-sm text-gray-500 mt-0.5">We'd love to attend. Fill out a quick form and we'll get back to you.</p>
           </div>
-        ) : (
-          <form onSubmit={handleInviteSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-                <input type="text" name="name" required value={inviteForm.name}
-                  onChange={handleInviteChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Your Email</label>
-                <input type="email" name="email" required value={inviteForm.email}
-                  onChange={handleInviteChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-              </div>
-            </div>
+          <button
+            onClick={() => setShowInviteForm(true)}
+            className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors flex-shrink-0"
+          >
+            Invite Us
+          </button>
+        </div>
+      </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">School / Organization</label>
-              <input type="text" name="school" required value={inviteForm.school}
-                onChange={handleInviteChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+      {/* Invite Form Modal */}
+      {showInviteForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white">
+              <h2 className="font-semibold text-gray-900">Invite ERAU-MUN to Your Conference</h2>
+              <button onClick={() => { setShowInviteForm(false); setInviteSubmitted(false) }}
+                className="text-gray-400 hover:text-gray-600 text-lg">&#x2715;</button>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Conference Name</label>
-              <input type="text" name="conference" required value={inviteForm.conference}
-                onChange={handleInviteChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+            <div className="p-6">
+              {inviteSubmitted ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="font-semibold text-gray-900 mb-1">Thank you for reaching out!</p>
+                  <p className="text-sm text-gray-500">We'll review your invitation and get back to you as soon as possible.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleInviteSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                      <input type="text" name="name" required value={inviteForm.name}
+                        onChange={handleInviteChange}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Your Email</label>
+                      <input type="email" name="email" required value={inviteForm.email}
+                        onChange={handleInviteChange}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">School / Organization</label>
+                    <input type="text" name="school" required value={inviteForm.school}
+                      onChange={handleInviteChange}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Conference Name</label>
+                    <input type="text" name="conference" required value={inviteForm.conference}
+                      onChange={handleInviteChange}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Conference Date</label>
+                      <input type="date" name="date" value={inviteForm.date}
+                        onChange={handleInviteChange}
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      <input type="text" name="location" value={inviteForm.location}
+                        onChange={handleInviteChange}
+                        placeholder="City, State"
+                        className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Additional Details (optional)</label>
+                    <textarea name="message" value={inviteForm.message} onChange={handleInviteChange} rows={3}
+                      placeholder="Tell us more about your conference, committee offerings, registration fees, etc."
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none" />
+                  </div>
+                  {inviteError && (
+                    <p className="text-sm text-red-500">{inviteError}</p>
+                  )}
+                  <div className="flex gap-3">
+                    <button type="submit" disabled={inviteSubmitting}
+                      className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
+                      {inviteSubmitting ? 'Sending...' : 'Send Invitation'}
+                    </button>
+                    <button type="button" onClick={() => setShowInviteForm(false)}
+                      className="border border-gray-200 text-gray-600 font-semibold text-sm px-6 py-2.5 rounded hover:border-gray-400 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Conference Date</label>
-                <input type="date" name="date" value={inviteForm.date}
-                  onChange={handleInviteChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <input type="text" name="location" value={inviteForm.location}
-                  onChange={handleInviteChange}
-                  placeholder="City, State"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Additional Details (optional)</label>
-              <textarea name="message" value={inviteForm.message} onChange={handleInviteChange} rows={3}
-                placeholder="Tell us more about your conference, committee offerings, registration fees, etc."
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none" />
-            </div>
-
-            {inviteError && (
-              <p className="text-sm text-red-500">{inviteError}</p>
-            )}
-
-            <div className="flex gap-3">
-              <button type="submit" disabled={inviteSubmitting}
-                className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
-                {inviteSubmitting ? 'Sending...' : 'Send Invitation'}
-              </button>
-              <button type="button" onClick={() => setShowInviteForm(false)}
-                className="border border-gray-200 text-gray-600 font-semibold text-sm px-6 py-2.5 rounded hover:border-gray-400 transition-colors">
-                Cancel
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+          </div>
+        </div>
+      )}
 
       {/* Ernie Crisis */}
       <section className="px-6 py-20 bg-gray-50">
@@ -258,16 +260,12 @@ ${inviteForm.message}
                 ERAU-MUN's signature crisis simulation event, open to individuals and teams from any school. Experience the intensity of high-stakes diplomatic decision-making in a fast-paced crisis environment.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Link
-                  to="/ernie-crisis"
-                  className="bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors"
-                >
+                <Link to="/ernie-crisis"
+                  className="bg-[#d4af62] text-[#1e3a6e] font-semibold text-sm px-6 py-3 rounded hover:bg-[#e8c570] transition-colors">
                   Learn More
                 </Link>
-                <Link
-                  to="/ernie-crisis#register"
-                  className="border border-white/35 text-white font-semibold text-sm px-6 py-3 rounded hover:border-white/70 transition-colors"
-                >
+                <Link to="/ernie-crisis#register"
+                  className="border border-white/35 text-white font-semibold text-sm px-6 py-3 rounded hover:border-white/70 transition-colors">
                   Register Now
                 </Link>
               </div>

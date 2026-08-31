@@ -28,6 +28,7 @@ import Register from './pages/public/Register'
 import Pending from './pages/public/Pending'
 import InviteAccept from './pages/public/InviteAccept'
 import Demo from './pages/public/Demo'
+import ConferenceRecap from './pages/public/ConferenceRecap'
 
 // Portal pages
 import PortalHome from './pages/portal/Home'
@@ -98,6 +99,7 @@ export default function App() {
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/demo" element={<Demo />} />
+            <Route path="/conferences/:eventId" element={<ConferenceRecap />} />
           </Route>
 
           {/* ── Auth routes ── */}
