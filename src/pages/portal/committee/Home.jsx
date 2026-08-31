@@ -11,6 +11,7 @@ export default function CommitteeHome() {
   const [floorState, setFloorState] = useState(null)
   const [recentInjects, setRecentInjects] = useState([])
   const [stats, setStats] = useState({ submissions: 0, delegates: 0, motions: 0 })
+  const [committeeRoster, setCommitteeRoster] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function CommitteeHome() {
       fetchAnnouncements(),
       fetchFloorState(),
       fetchStats(),
+      fetchCommitteeRoster(),
       committee?.type === 'crisis' ? fetchRecentInjects() : Promise.resolve(),
     ])
     setLoading(false)
@@ -65,7 +67,7 @@ export default function CommitteeHome() {
       .from('floor_state')
       .select('*')
       .eq('committee_id', committee.id)
-      .single()
+      .maybeSingle()
     setFloorState(data)
   }
 
@@ -76,6 +78,15 @@ export default function CommitteeHome() {
       supabase.from('motions').select('*', { count: 'exact', head: true }).eq('committee_id', committee.id).eq('status', 'pending'),
     ])
     setStats({ submissions, delegates, motions })
+  }
+
+  async function fetchCommitteeRoster() {
+    const { data } = await supabase
+      .from('committee_roles')
+      .select('*, profiles(first_name, last_name, school)')
+      .eq('committee_id', committee.id)
+      .order('role')
+    setCommitteeRoster(data ?? [])
   }
 
   async function fetchRecentInjects() {
@@ -151,6 +162,30 @@ export default function CommitteeHome() {
         ))}
       </div>
 
+      {/* Committee Roster */}
+      {committeeRoster.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900">Committee Roster</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4">
+            {committeeRoster.map(member => (
+              <div key={member.id} className="bg-gray-50 rounded-lg px-3 py-2.5 text-center">
+                <p className="text-sm font-bold text-[#1e3a6e] leading-tight">
+                  {member.assignment ?? member.role?.replace('_', ' ')}
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  {member.profiles?.first_name} {member.profiles?.last_name}
+                </p>
+                {member.profiles?.school && (
+                  <p className="text-xs text-gray-400 truncate">{member.profiles.school}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Announcements */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
@@ -186,9 +221,9 @@ export default function CommitteeHome() {
                 <div key={inject.id} className={`px-5 py-3 border-l-4 ${INJECT_COLORS[inject.inject_type] ?? INJECT_COLORS.general}`}>
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-semibold text-gray-900">{inject.title}</p>
-                    <span className="text-xs font-bold text-red-500 uppercase">
-                      {inject.inject_type === 'urgent' ? '⚡ Urgent' : ''}
-                    </span>
+                    {inject.inject_type === 'urgent' && (
+                      <span className="text-xs font-bold text-red-500 uppercase">⚡ Urgent</span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{inject.content}</p>
                   <p className="text-xs text-gray-400 mt-1">
@@ -213,6 +248,7 @@ export default function CommitteeHome() {
               { label: 'Resolutions', to: 'resolutions' },
               { label: 'Floor', to: 'floor' },
               { label: 'Messages', to: 'messages' },
+              { label: 'Resources', to: 'resources' },
               ...(committee?.type === 'crisis' ? [{ label: 'Crisis Feed', to: 'crisis' }] : []),
               ...(isStaff ? [{ label: 'Voting', to: 'voting' }] : []),
             ].map(link => (
