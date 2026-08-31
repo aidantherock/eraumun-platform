@@ -7,7 +7,7 @@ const TABS = ['Overview', 'Schedule', 'Committees', 'Files', 'Delegates', 'Setti
 
 export default function EventDetail() {
   const { eventId } = useParams()
-  const { profile, isEboard, isStaffOrAbove } = useAuth()
+  const { profile, isStaffOrAbove } = useAuth()
   const navigate = useNavigate()
   const [event, setEvent] = useState(null)
   const [committees, setCommittees] = useState([])
@@ -33,10 +33,10 @@ export default function EventDetail() {
       fetchSchedule(),
       fetchFiles(),
       fetchAnnouncements(),
-      fetchUserCommittees(),
       fetchChecklist(),
       isStaffOrAbove ? fetchAttendees() : Promise.resolve(),
     ])
+    await fetchUserCommittees()
     setLoading(false)
   }
 
@@ -93,7 +93,10 @@ export default function EventDetail() {
       .from('event_roles')
       .select('id')
       .eq('event_id', eventId)
-    if (!eventRoles?.length) return
+    if (!eventRoles?.length) {
+      setAttendees([])
+      return
+    }
     const { data } = await supabase
       .from('user_event_roles')
       .select('*, profiles(id, first_name, last_name, email, school, avatar_url)')
@@ -103,22 +106,25 @@ export default function EventDetail() {
   }
 
   async function fetchUserCommittees() {
+    const committeeIds = committees.map(c => c.id)
+    if (!committeeIds.length) return
     const { data } = await supabase
       .from('committee_roles')
-      .select('committee_id')
+      .select('committee_id, role, assignment')
       .eq('user_id', profile.id)
+      .in('committee_id', committeeIds)
     setUserCommittees(data?.map(r => r.committee_id) ?? [])
   }
 
   async function fetchChecklist() {
-    const { data: template } = await supabase
+    const { data: template, error } = await supabase
       .from('checklist_templates')
       .select('*')
       .eq('event_id', eventId)
       .eq('is_published', true)
-      .single()
+      .maybeSingle()
 
-    if (!template) return
+    if (error || !template) return
     setChecklist(template)
 
     const { data: items } = await supabase
@@ -179,6 +185,10 @@ export default function EventDetail() {
     ? Math.round((completedCount / checklistItems.length) * 100)
     : 0
 
+  const daysUntil = event?.start_date
+    ? Math.ceil((new Date(event.start_date + 'T00:00:00') - new Date()) / (1000 * 60 * 60 * 24))
+    : null
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -232,7 +242,7 @@ export default function EventDetail() {
                   </span>
                 )}
                 {event.category && (
-                  <span className="text-xs bg-white/10 text-white/60 font-bold uppercase tracking-wide px-2 py-0.5 rounded capitalize">
+                  <span className="text.xs bg-white/10 text-white/60 font-bold uppercase tracking-wide px-2 py-0.5 rounded capitalize">
                     {event.category}
                   </span>
                 )}
@@ -258,6 +268,23 @@ export default function EventDetail() {
               </Link>
             )}
           </div>
+
+          {/* Countdown banner */}
+          {daysUntil !== null && daysUntil > 0 && (
+            <div className="mt-4 bg-[#b8963e]/20 border border-[#b8963e]/30 rounded-lg px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm font-semibold text-[#d4af62]">
+                ⏳ {daysUntil} day{daysUntil !== 1 ? 's' : ''} until {event.name}
+              </p>
+              {event.end_date && (
+                <p className="text-xs text-white/50">
+                  {new Date(event.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  {event.end_date !== event.start_date && (
+                    <> — {new Date(event.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 mt-6 border-b border-white/10">
@@ -331,6 +358,7 @@ export default function EventDetail() {
 
             {/* Sidebar */}
             <div className="space-y-4">
+              {/* Quick info */}
               <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <h3 className="font-semibold text-gray-900 mb-4">Quick Info</h3>
                 <div className="space-y-3">
@@ -347,6 +375,40 @@ export default function EventDetail() {
                   ))}
                 </div>
               </div>
+
+              {/* Committee assignment */}
+              {userCommittees.length > 0 ? (
+                <div className="bg-white border border-[#b8963e] rounded-xl p-5 shadow-sm">
+                  <h3 className="font-semibold text-gray-900 mb-1">Your Assignment</h3>
+                  <p className="text-xs text-gray-400 mb-3">Your committee assignment for this event.</p>
+                  <div className="flex flex-col gap-2">
+                    {committees.filter(c => userCommittees.includes(c.id)).map(c => (
+                      <Link key={c.id} to={`/portal/committee/${c.id}`}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-[#b8963e]/30 bg-[#fdf6e3] hover:bg-[#f5e9c8] transition-all">
+                        {c.logo_url ? (
+                          <img src={c.logo_url} alt={c.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-[#1e3a6e] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {c.name?.charAt(0)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">{c.name}</p>
+                          <p className="text-xs text-[#b8963e] font-medium">
+                            {c.type === 'crisis' ? 'Crisis Committee' : 'General Assembly'}
+                          </p>
+                        </div>
+                        <span className="text-xs text-[#1e3a6e] font-semibold flex-shrink-0">Enter →</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <h3 className="font-semibold text-gray-900 mb-1">Your Assignment</h3>
+                  <p className="text-xs text-gray-400 mt-1">You haven't been assigned to a committee yet. Check back closer to the event.</p>
+                </div>
+              )}
 
               {/* Checklist progress */}
               {checklist && checklistItems.length > 0 && (
@@ -383,33 +445,6 @@ export default function EventDetail() {
                   Download Certificate
                 </a>
               </div>
-
-              {/* My committees */}
-              {userCommittees.length > 0 && (
-                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 mb-3">My Committees</h3>
-                  <div className="flex flex-col gap-2">
-                    {committees.filter(c => userCommittees.includes(c.id)).map(c => (
-                      <Link key={c.id} to={`/portal/committee/${c.id}`}
-                        className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:border-[#1e3a6e] hover:bg-[#e8eef7] transition-all">
-                        {c.logo_url ? (
-                          <img src={c.logo_url} alt={c.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
-                        ) : (
-                          <div className="w-8 h-8 rounded bg-[#1e3a6e] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                            {c.name?.charAt(0)}
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-xs font-semibold text-gray-900">{c.name}</p>
-                          <p className="text-xs text-[#b8963e] font-medium">
-                            {c.type === 'crisis' ? 'Crisis' : 'GA'}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}

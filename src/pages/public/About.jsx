@@ -127,13 +127,17 @@ export default function About() {
     </div>
     <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
       {LEADERSHIP.map(member => (
-        <div key={member.name} style={{ perspective: '1000px' }} className="h-72">
-          <div
-            className="relative w-full h-full transition-transform duration-700 cursor-pointer"
-            style={{ transformStyle: 'preserve-3d' }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'rotateY(180deg)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'rotateY(0deg)'}
-          >
+        <div
+  key={member.name}
+  className="h-72 cursor-pointer"
+  style={{ perspective: '1000px' }}
+  onMouseEnter={e => e.currentTarget.querySelector('.flip-inner').style.transform = 'rotateY(180deg)'}
+  onMouseLeave={e => e.currentTarget.querySelector('.flip-inner').style.transform = 'rotateY(0deg)'}
+>
+  <div
+    className="flip-inner relative w-full h-full transition-transform duration-700"
+    style={{ transformStyle: 'preserve-3d' }}
+  >
             {/* Front */}
             <div
               className="absolute inset-0 rounded-xl overflow-hidden shadow-md"
