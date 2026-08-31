@@ -29,6 +29,7 @@ import Pending from './pages/public/Pending'
 import InviteAccept from './pages/public/InviteAccept'
 import Demo from './pages/public/Demo'
 import ConferenceRecap from './pages/public/ConferenceRecap'
+import DelegationInviteAccept from './pages/public/DelegationInviteAccept'
 
 // Portal pages
 import PortalHome from './pages/portal/Home'
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/demo" element={<Demo />} />
             <Route path="/conferences/:eventId" element={<ConferenceRecap />} />
+            <Route path="/invite/delegation/:token" element={<DelegationInviteAccept />} />
           </Route>
 
           {/* ── Auth routes ── */}
