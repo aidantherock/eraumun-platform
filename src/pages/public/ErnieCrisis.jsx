@@ -1,4 +1,11 @@
-﻿import { useState } from 'react'
+﻿<SEO
+  title="Ernie Crisis Simulation"
+  description="Register for the Ernie Crisis Simulation, a unique MUN experience designed to challenge participants with real-world scenarios."
+  url="/ernie-crisis"
+/>
+
+import SEO from '../../components/SEO'
+import { useState } from 'react'
 
 const INDIVIDUAL_FIELDS = [
   { key: 'first_name', label: 'First Name', type: 'text', required: true },

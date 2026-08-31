@@ -1,7 +1,14 @@
-﻿import { useState, useEffect } from 'react'
+﻿<SEO
+  title="News & Events"
+  description="Stay up to date with ERAU-MUN announcements, meeting schedules, and conference news."
+  url="/news"
+/>
+
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+import SEO from '../../components/SEO'
 
 const TYPE_COLORS = {
   gbm: { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#b8963e]' },

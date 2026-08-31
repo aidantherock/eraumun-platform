@@ -1,4 +1,11 @@
-﻿import { useState } from 'react'
+﻿<SEO
+  title="Contact"
+  description="Get in touch with ERAU Model United Nations."
+  url="/contact"
+/>
+
+import { useState } from 'react'
+import SEO from '../../components/SEO'
 
 const FORM_TYPES = [
   { id: 'general', label: 'General Inquiry' },

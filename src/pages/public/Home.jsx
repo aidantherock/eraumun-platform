@@ -1,5 +1,12 @@
+<SEO
+  title="Home"
+  description="ERAU Model United Nations - Embry-Riddle Aeronautical University's official competitive intercollegiate MUN team developing the next generation of global leaders through diplomacy, debate, and international cooperation."
+  url="/"
+/>
+
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import SEO from '../../components/SEO'
 import { supabase } from '../../lib/supabase'
 
 function HeroCalendar() {

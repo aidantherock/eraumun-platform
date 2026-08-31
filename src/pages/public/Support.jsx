@@ -1,4 +1,11 @@
-﻿import { Link } from 'react-router-dom'
+﻿<SEO
+  title="Support Us"
+  description="Support ERAU-MUN through sponsorships, donations, or the Adopt-a-Delegate program."
+  url="/support"
+/>
+
+import { Link } from 'react-router-dom'
+import SEO from '../../components/SEO'
 
 export default function Support() {
   return (

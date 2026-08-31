@@ -1,5 +1,12 @@
+<SEO
+  title="Photo Gallery"
+  description="Photos from ERAU-MUN conferences, events, and club activities."
+  url="/gallery"
+/>
+
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import SEO from '../../components/SEO'
 
 export default function Gallery() {
   const [photos, setPhotos] = useState([])

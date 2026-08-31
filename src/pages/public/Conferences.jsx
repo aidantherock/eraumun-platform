@@ -1,6 +1,13 @@
+<SEO
+  title="Conferences & Events"
+  description="See the conferences ERAU-MUN attends and hosts, including ErnieMUN and the Ernie Crisis Simulation."
+  url="/conferences"
+/>
+
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import SEO from '../../components/SEO'
 
 export default function Conferences() {
   const [conferences, setConferences] = useState([])

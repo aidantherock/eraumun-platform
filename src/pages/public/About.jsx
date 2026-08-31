@@ -1,3 +1,11 @@
+<SEO
+  title="About"
+  description="Learn about ERAU-MUN, our mission, values, leadership team, and what we do at Embry-Riddle Aeronautical University."
+  url="/about"
+/>
+
+import SEO from '../../components/SEO'
+
 {/*
  * ============================================================
  * LEADERSHIP SECTION — HEADSHOT GUIDE
