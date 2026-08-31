@@ -8,6 +8,7 @@ const EMPTY_FORM = {
   event_time: '', category: '', start_date: '', end_date: '',
   is_away_conference: false, is_recurring: false, recurrence_rule: '',
   recurrence_end_date: '', hotel_info: '', schedule_url: '',
+  delegation_mode: false,
 }
 
 const STATUS_COLORS = {
@@ -117,6 +118,19 @@ function EventForm({ form, onChange, onSubmit, submitting, submitLabel }) {
           </div>
         </div>
       )}
+      {!form.is_away_conference && (
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="delegation_mode" checked={form.delegation_mode ?? false} onChange={onChange} className="accent-[#1e3a6e]" />
+          <span className="text-sm text-gray-600">Enable delegation mode (for hosted conferences with outside school delegations)</span>
+        </label>
+      )}
+      {!form.is_away_conference && form.delegation_mode && (
+        <div className="bg-[#e8eef7] border border-[#1e3a6e]/20 rounded-lg p-3">
+          <p className="text-xs text-[#1e3a6e]">
+            Delegation mode enables Head Delegate accounts, team invitations, and delegation grouping. Use when hosting a conference where multiple schools send delegations.
+          </p>
+        </div>
+      )}
       <button type="submit" disabled={submitting}
         className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
         {submitting ? 'Saving...' : submitLabel}
@@ -221,6 +235,7 @@ export default function AdminEvents() {
       recurrence_end_date: event.recurrence_end_date ?? '',
       hotel_info: event.hotel_info ?? '',
       schedule_url: event.schedule_url ?? '',
+      delegation_mode: event.delegation_mode ?? false,
     })
     setEditing(true)
     fetchInterestedUsers(event.id)
@@ -339,6 +354,7 @@ export default function AdminEvents() {
                   {event.is_cancelled && <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">Cancelled</span>}
                   {event.is_recurring && <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Recurring</span>}
                   {event.is_away_conference && <span className="text-xs font-bold text-[#b8963e] bg-[#fdf6e3] px-2 py-0.5 rounded-full">Away</span>}
+                  {event.delegation_mode && <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Delegation Mode</span>}
                   {event.category && <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full capitalize">{event.category}</span>}
                 </div>
                 {event.location && <p className="text-xs text-gray-500">{event.location}</p>}
