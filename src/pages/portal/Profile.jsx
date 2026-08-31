@@ -14,6 +14,14 @@ export default function PortalProfile() {
   const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' })
   const [passwordError, setPasswordError] = useState('')
   const [passwordSaved, setPasswordSaved] = useState(false)
+  const [emailPrefs, setEmailPrefs] = useState({
+    event_reminders: true,
+    announcement_emails: true,
+    submission_replies: true,
+    weekly_digest: false,
+  })
+  const [prefsSaved, setPrefsSaved] = useState(false)
+  const [prefsLoading, setPrefsLoading] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -31,6 +39,7 @@ export default function PortalProfile() {
       })
       fetchAwards()
       fetchEventHistory()
+      fetchEmailPrefs()
     }
   }, [profile])
 
@@ -51,9 +60,28 @@ export default function PortalProfile() {
     setEventHistory(data ?? [])
   }
 
+  async function fetchEmailPrefs() {
+    const { data } = await supabase
+      .from('email_preferences')
+      .select('*')
+      .eq('user_id', profile.id)
+      .maybeSingle()
+    if (data) setEmailPrefs({
+      event_reminders: data.event_reminders,
+      announcement_emails: data.announcement_emails,
+      submission_replies: data.submission_replies,
+      weekly_digest: data.weekly_digest,
+    })
+  }
+
   function handleChange(e) {
     const { name, value, type, checked } = e.target
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+  }
+
+  function handlePrefChange(e) {
+    const { name, checked } = e.target
+    setEmailPrefs(prev => ({ ...prev, [name]: checked }))
   }
 
   async function handleSave(e) {
@@ -61,12 +89,10 @@ export default function PortalProfile() {
     setError('')
     setSaved(false)
     setLoading(true)
-
     const { error: dbError } = await supabase
       .from('profiles')
       .update(form)
       .eq('id', profile.id)
-
     if (dbError) {
       setError('Failed to save. Please try again.')
     } else {
@@ -77,10 +103,20 @@ export default function PortalProfile() {
     setLoading(false)
   }
 
+  async function handleSavePrefs(e) {
+    e.preventDefault()
+    setPrefsLoading(true)
+    await supabase
+      .from('email_preferences')
+      .upsert({ ...emailPrefs, user_id: profile.id }, { onConflict: 'user_id' })
+    setPrefsSaved(true)
+    setTimeout(() => setPrefsSaved(false), 3000)
+    setPrefsLoading(false)
+  }
+
   async function handleAvatarUpload(e) {
     const file = e.target.files?.[0]
     if (!file) return
-
     const allowed = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowed.includes(file.type)) {
       setError('Only JPG, PNG, or WebP images are allowed.')
@@ -90,25 +126,18 @@ export default function PortalProfile() {
       setError('Image must be under 5MB.')
       return
     }
-
     setUploading(true)
     const ext = file.name.split('.').pop()
     const path = `avatars/${profile.id}.${ext}`
-
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(path, file, { upsert: true })
-
     if (uploadError) {
       setError('Upload failed. Please try again.')
       setUploading(false)
       return
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(path)
-
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
     await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id)
     await refreshProfile()
     setUploading(false)
@@ -118,7 +147,6 @@ export default function PortalProfile() {
     e.preventDefault()
     setPasswordError('')
     setPasswordSaved(false)
-
     if (passwordForm.new.length < 8) {
       setPasswordError('Password must be at least 8 characters.')
       return
@@ -135,7 +163,6 @@ export default function PortalProfile() {
       setPasswordError('Passwords do not match.')
       return
     }
-
     const { error } = await supabase.auth.updateUser({ password: passwordForm.new })
     if (error) {
       setPasswordError('Failed to update password. Please try again.')
@@ -148,7 +175,6 @@ export default function PortalProfile() {
 
   return (
     <div className="max-w-3xl space-y-8">
-
       <div>
         <h1 className="font-serif text-2xl font-bold text-gray-900">My Profile</h1>
         <p className="text-sm text-gray-500 mt-1">Manage your account information and preferences.</p>
@@ -180,14 +206,12 @@ export default function PortalProfile() {
       {/* Profile form */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="font-semibold text-gray-900 mb-5">Personal Information</h2>
-
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{error}</div>
         )}
         {saved && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">Profile saved successfully.</div>
         )}
-
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -201,20 +225,17 @@ export default function PortalProfile() {
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">School / Institution</label>
             <input type="text" name="school" value={form.school ?? ''} onChange={handleChange}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors" />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
             <textarea name="bio" value={form.bio ?? ''} onChange={handleChange} rows={3}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a6e] transition-colors resize-none"
               placeholder="Tell us about yourself..." />
           </div>
-
           <div className="border-t border-gray-100 pt-4">
             <p className="text-sm font-medium text-gray-700 mb-3">Social Media & Contact (Optional)</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -238,7 +259,6 @@ export default function PortalProfile() {
               <span className="text-sm text-gray-600">Show contact info on my public profile</span>
             </label>
           </div>
-
           <button type="submit" disabled={loading}
             className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50">
             {loading ? 'Saving...' : 'Save Changes'}
@@ -246,7 +266,42 @@ export default function PortalProfile() {
         </form>
       </div>
 
-      {/* Role info (read-only) */}
+      {/* Email Preferences */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 className="font-semibold text-gray-900 mb-1">Email Preferences</h2>
+        <p className="text-xs text-gray-400 mb-5">Control which emails you receive from ERAU-MUN.</p>
+        {prefsSaved && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">Preferences saved.</div>
+        )}
+        <form onSubmit={handleSavePrefs} className="space-y-3">
+          {[
+            { key: 'event_reminders', label: 'Event Reminders', description: '24-hour reminders before events you are registered for.' },
+            { key: 'announcement_emails', label: 'Announcements', description: 'Important club announcements from the Eboard.' },
+            { key: 'submission_replies', label: 'Submission Replies', description: 'Notifications when staff replies to your committee submissions.' },
+            { key: 'weekly_digest', label: 'Weekly Digest', description: 'A weekly summary of upcoming events and club news.' },
+          ].map(pref => (
+            <label key={pref.key} className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <input
+                type="checkbox"
+                name={pref.key}
+                checked={emailPrefs[pref.key]}
+                onChange={handlePrefChange}
+                className="accent-[#1e3a6e] mt-0.5 flex-shrink-0"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-900">{pref.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{pref.description}</p>
+              </div>
+            </label>
+          ))}
+          <button type="submit" disabled={prefsLoading}
+            className="bg-[#1e3a6e] text-white font-semibold text-sm px-6 py-2.5 rounded hover:bg-[#2d538f] transition-colors disabled:opacity-50 mt-2">
+            {prefsLoading ? 'Saving...' : 'Save Preferences'}
+          </button>
+        </form>
+      </div>
+
+      {/* Role info */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="font-semibold text-gray-900 mb-4">Roles & Membership</h2>
         <div className="flex flex-wrap gap-2">
@@ -333,7 +388,6 @@ export default function PortalProfile() {
           </button>
         </form>
       </div>
-
     </div>
   )
 }
