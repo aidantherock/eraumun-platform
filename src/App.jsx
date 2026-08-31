@@ -40,6 +40,7 @@ import Directory from './pages/portal/Directory'
 import MemberProfile from './pages/portal/MemberProfile'
 import StaffControlRoom from './pages/portal/StaffControlRoom'
 import EventChecklist from './pages/portal/EventChecklist'
+import DelegationDashboard from './pages/portal/DelegationDashboard'
 
 // Committee workspace
 import CommitteeHome from './pages/portal/committee/Home'
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="directory" element={<Directory />} />
             <Route path="directory/:memberId" element={<MemberProfile />} />
             <Route path="control-room/:eventId" element={<StaffControlRoom />} />
+            <Route path="delegation/:eventId" element={<DelegationDashboard />} />
           </Route>
 
           {/* ── Conference mode (standalone, no portal layout) ── */}
